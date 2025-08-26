@@ -11,4 +11,6 @@
 
 - EntityFrameWork Manager
   - (https://github.com/leeseockmin/gameServer/blob/main/Data/AccountDB/AccountDBContext.cs)
-- 
+ 
+- Unique Key
+  - (https://github.com/leeseockmin/gameServer/blob/main/FrogTailGameServer/Logic/Utils/UniqueKey.cs)
