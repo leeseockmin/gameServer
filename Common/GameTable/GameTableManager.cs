@@ -14,7 +14,7 @@ namespace GameServer.GameTable
 		{
 		}
 		private static GameTableManager Instance = null; 
-		private Dictionary<string, IGaneTableLoad> TableInfo = new Dictionary<string, IGaneTableLoad>();
+		private Dictionary<string, IGameTableLoad> TableInfo = new Dictionary<string, IGameTableLoad>();
 		public ItemTableManager ItemTableManager = new ItemTableManager();
 		
 		// 초기 TableLoad

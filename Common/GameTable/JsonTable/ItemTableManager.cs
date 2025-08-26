@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GameServer.GameTable.JsonTable
 {
-	public class ItemTableManager : IGaneTableLoad
+	public class ItemTableManager : IGameTableLoad
 	{
 		Dictionary<int, ItemTable> ItemTables = null;
 		public class ItemTable

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GameServer.GameTable.JsonTable
 {
-    public interface IGaneTableLoad
+    public interface IGameTableLoad
     {
         public bool LoadTable(string json);
         public bool AfterLoad();

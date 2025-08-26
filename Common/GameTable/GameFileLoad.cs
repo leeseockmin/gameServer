@@ -12,7 +12,7 @@ namespace GameServer.GameTable
 {
 	public class GameFileLoad
 	{
-		public static bool JsonFileLoad(string path, string fileName, IGaneTableLoad loader)
+		public static bool JsonFileLoad(string path, string fileName, IGameTableLoad loader)
 		{
 			bool isSuccess = true;
 			var jsonFilePath = System.IO.Path.Combine("../" + path, fileName + ".json");
