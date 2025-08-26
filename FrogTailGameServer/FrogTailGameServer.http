@@ -1,0 +1,6 @@
+@FrogTailGameServer_HostAddress = http://119.69.50.205:5127
+
+GET {{FrogTailGameServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

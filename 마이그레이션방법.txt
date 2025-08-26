@@ -1,0 +1,3 @@
+Add-Migration InitialCreate -Context AccountDBContext -Project DB.Data -OutputDir "Migrations\AccountMigrations" -> 바뀐 데이터 추가
+Update-Database -Context AccountDBContext -Project DB.Data -StartupProject FrogTailGameServer -> DB에 갱신
+Update-Database -TargetMigration "마이그레이션" -Project DB.Data -Context AccountDBContext -> 롤백
