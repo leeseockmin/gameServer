@@ -9,7 +9,7 @@
 - DB Manager
   - (https://github.com/leeseockmin/gameServer/blob/main/FrogTailGameServer/DB/DataBaseManager.cs)
 
-- EntityFrameWork Manager
+- DB Context
   - (https://github.com/leeseockmin/gameServer/blob/main/Data/AccountDB/AccountDBContext.cs)
  
 - Unique Key
