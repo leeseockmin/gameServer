@@ -1,9 +1,12 @@
 ﻿using Common.Redis;
 using DataBase.GameDB;
 using FrogTailGameServer.ControllerLogic;
+using FrogTailGameServer.Logic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Org.BouncyCastle.Asn1;
 using Share.Packet;
+using System.Drawing;
+using System.Security.Cryptography;
 
 namespace FrogTailGameServer.ControllerLogic
 {
@@ -77,11 +80,11 @@ namespace FrogTailGameServer.ControllerLogic
 								getAccountInfo = new DataBase.AccountDB.Account();
 							}
 						});
-
-						redisClient.SetUserSession(userSession);
+						userSession.userToken = RandToken.GenerateUniqueToken();
+						await redisClient.SetUserSession(userSession);
 						//SetUserSession(userSession);
 
-						ans.UserId = userSession.UserId;
+						ans.UserId = userSession.userId;
 					}
 					catch (Exception ex)
 					{
@@ -112,9 +115,9 @@ namespace FrogTailGameServer.ControllerLogic
 			{
 				ans = new GCLoginAnsPacket();
 				var userSession = new RedisClient.UserSession();
-				userSession.UserId = 1;
+				userSession.userId = 1;
 
-				ans.UserId = userSession.UserId;
+				ans.UserId = userSession.userId;
 			}
 			return ans;
 		}

@@ -6,7 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Mysqlx.Expr;
 using StackExchange.Redis;
+using ZstdSharp.Unsafe;
 
 namespace Common.Redis
 {
@@ -115,6 +117,11 @@ namespace Common.Redis
 			}
 
 			return getObject;
+		}
+
+		private async Task ExpiryAsync(string redisKey, TimeSpan expire)
+		{
+			await this.GetDatabase().KeyExpireAsync(redisKey, expire);
 		}
 
 

@@ -41,6 +41,11 @@ namespace FrogTailGameServer.MiddleWare
 					throw new Exception($"Not Unauthoize User ErrorCode:{httpStatusCode}");
 				}
 
+				if (context.User.Identity.IsAuthenticated == false)
+				{
+					context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+					throw new Exception($"context.User.Identity.IsAuthenticated  ErrorCode:{httpStatusCode}");
+				}
 				SendResponse(context);
 
 				await _next(context);
@@ -94,11 +99,7 @@ namespace FrogTailGameServer.MiddleWare
 
 		private async Task<CustomIdentity> GetIdentity(StringValues authHeader)
 		{
-			//var getParameter = GetAuthHeader(authHeader.ToString());
-			//if(getParameter == null || getParameter.Count() != 2)
-			//{
-			//	return null;
-			//}
+		
 			CustomIdentity idenytity = null;
 			if (_devMode == false)
 			{
@@ -113,9 +114,12 @@ namespace FrogTailGameServer.MiddleWare
 			var redisClient = _serviceProvider.GetService<RedisClient>();
 			if(redisClient != null)
 			{
-				//[TODO]가져오고 나서 다시 한번 Session 시간 늘려준다 현재는 개발용이기 떄문에 추후 ExpireTime 추가 
-				var userSession = await redisClient.GetUserSession(Convert.ToInt64(authHeader));
-				idenytity.UserSession = userSession;
+				var userSession = await redisClient.GetUserSession(authHeader);
+				if(userSession != null)
+				{
+					await redisClient.AddSessionExpireTime(authHeader);
+					idenytity.UserSession = userSession;
+				}
 			}
 
 			return idenytity;

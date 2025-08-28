@@ -29,7 +29,7 @@ namespace FrogTailGameServer.ControllerLogic
 
 		void SetUserSession(RedisClient.UserSession userSession)
 		{
-			CustomIdentity customIdentity = new CustomIdentity(userSession.UserId.ToString());
+			CustomIdentity customIdentity = new CustomIdentity(userSession.userId.ToString());
 			_actionContextAccessor.ActionContext.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(customIdentity);
 		}
 
