@@ -4,6 +4,7 @@ using DataBase.GameDB;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Data.Common;
 
 namespace DB
 {
@@ -12,7 +13,7 @@ namespace DB
         public enum DBtype
         {
             NONE = 0,
-            Acount = 1,
+			Account = 1,
             Game = 2,
         }
 
@@ -31,7 +32,7 @@ namespace DB
             DbContext context = null;
             switch (dbtype)
             {
-                case DBtype.Acount:
+                case DBtype.Account:
                     {
                         context = await _acountContextFactory.CreateDbContextAsync();
                     }
@@ -46,14 +47,14 @@ namespace DB
         }
 
 
-        public async Task DBContextExcute(DBtype dbtype, Func<DbContext, Task> func)
+        public async Task DBContextExcute(DBtype dbtype, Func<DbConnection, Task> func)
         {
             using (var context = await GetDBContext(dbtype))
             {
                 try
                 {
                     await context.Database.OpenConnectionAsync();
-                    await func.Invoke(context);
+                    await func.Invoke(context.Database.GetDbConnection());
                 }
                 catch (Exception ex)
                 {
@@ -73,7 +74,7 @@ namespace DB
         /// <param name="dbtype2"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public async Task DBContextExcute(DBtype dbtype1, DBtype dbtype2, Func<DbContext, DbContext, Task> func)
+        public async Task DBContextExcute(DBtype dbtype1, DBtype dbtype2, Func<DbConnection, DbConnection, Task> func)
         {
             using (var context1 = await GetDBContext(dbtype1))
             using (var context2 = await GetDBContext(dbtype2))
@@ -82,7 +83,7 @@ namespace DB
                 {
                     await context1.Database.OpenConnectionAsync();
                     await context2.Database.OpenConnectionAsync();
-                    await func.Invoke(context1, context2);
+                    await func.Invoke(context1.Database.GetDbConnection(), context2.Database.GetDbConnection());
                 }
                 catch (Exception ex)
                 {

@@ -28,11 +28,12 @@ namespace FrogTailGameServer.Controllers
 		public async Task<PacketAnsPacket> SwaggerPacket(long userId, PacketId packetId, JsonObject packetBase)
 		{
 			PacketAnsPacket response = null;
-			PacketReqeustBase receivePacket = Newtonsoft.Json.JsonConvert.DeserializeObject<PacketReqeustBase>(packetBase.ToJsonString());
+			PacketReqeustBase receivePacket = new PacketReqeustBase(packetId);
+			receivePacket.PacketBody = packetBase.ToJsonString();
 			try
 			{
 				var packetHandler = _serviceProvider.GetRequiredService<PacketHandler>();
-				response = await packetHandler.GetExcuteAPI(receivePacket, userId, true);
+				response = await packetHandler.GetExcuteAPI(receivePacket);
 			}
 			catch (Exception ex)
 			{
