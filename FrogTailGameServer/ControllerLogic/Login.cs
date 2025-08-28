@@ -1,4 +1,5 @@
 ﻿using Common.Redis;
+using DataBase.GameDB;
 using FrogTailGameServer.ControllerLogic;
 using Microsoft.Extensions.DependencyInjection;
 using Org.BouncyCastle.Asn1;
@@ -18,15 +19,8 @@ namespace FrogTailGameServer.ControllerLogic
 				ans = new GCLoginAnsPacket();
 				do
 				{
-					bool isCreate = false;
-					var userSession = this.GetUserSession<RedisClient.UserSession>();
-					if (userSession == null)
-					{
-						userSession = new RedisClient.UserSession();
 					
-					
-						isCreate = true;
-					}
+
 
 					var redisClient = _serviceProvider.GetService<RedisClient>();
 					if (redisClient == null)
@@ -34,6 +28,16 @@ namespace FrogTailGameServer.ControllerLogic
 						ans.ErrorCode = Share.Common.ErrrorCode.UNKNOW_ERROR;
 						break;
 					}
+
+					bool isCreate = false;
+					var userSession = this.GetUserSession<RedisClient.UserSession>();
+					if (userSession == null)
+					{
+						userSession = new RedisClient.UserSession();
+					
+						isCreate = true;
+					}
+
 
 					bool isSuccess = true;
 
@@ -66,9 +70,14 @@ namespace FrogTailGameServer.ControllerLogic
 					}
 
 
+					var getAccountInfo = this._dataBaseManager.DBContextExcute(DB.DataBaseManager.DBtype.Acount, async context =>
+					{
 
-					
-                    redisClient.SetUserSession(userSession);
+					});
+
+
+
+					redisClient.SetUserSession(userSession);
 					SetUserSession(userSession);
 
 					ans.UserId = userSession.UserId;

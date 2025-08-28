@@ -37,15 +37,16 @@ try
     builder.Services.AddSingleton<PacketHandler>();
     builder.Services.AddSingleton<RedisClient>();
 
-    var connection = builder.Configuration.GetConnectionString("GameDbConnection");
+    var gameDBconnection = builder.Configuration.GetConnectionString("GameDbConnection");
     builder.Services.AddDbContextFactory<GameDBContext>(option =>
     {
-        option.UseMySQL(connection);
+        option.UseMySQL(gameDBconnection);
     }, ServiceLifetime.Singleton);
 
-    builder.Services.AddDbContextFactory<AccountDBContext>(option =>
+	var accountDBconnection = builder.Configuration.GetConnectionString("AccountDbConnection");
+	builder.Services.AddDbContextFactory<AccountDBContext>(option =>
     {
-        option.UseMySQL(connection);
+        option.UseMySQL(accountDBconnection);
     }, ServiceLifetime.Singleton);
 
     builder.Services.AddSingleton<DataBaseManager>();
