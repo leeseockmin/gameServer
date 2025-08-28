@@ -1,5 +1,6 @@
 ﻿using DataBase.GameDB;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using Share.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -25,6 +26,7 @@ namespace DataBase.AccountDB
         public LoginType loginType { get; set; }
         public DateTime createDate { get; set; }
         public DateTime updateDate { get; set; }
+        public DateTime lastLoginTime { get; set; }
 
         public void CreateModel(ModelBuilder modelBuilder)
         {
