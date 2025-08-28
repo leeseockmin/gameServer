@@ -24,7 +24,6 @@ namespace Common.Redis
 			var getKey = string.Format(RedisKey.UserKey, userSession.UserId);
 			await HashSet<UserSession>(getKey, RedisHahField.SessionFieldKey, userSession);
 
-
 		}
 
 	}

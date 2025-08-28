@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data.Common;
+using System.Transactions;
 
 namespace DB
 {
@@ -99,5 +100,68 @@ namespace DB
         }
 
 
-    }
+		public async Task DBContextExcuteTransaction(DBtype dbtype, Func<DbConnection, Task<bool>> func)
+		{
+			using (var context = await GetDBContext(dbtype))
+			{
+				try
+				{
+
+					using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+					await context.Database.OpenConnectionAsync();
+					bool isSuccess = await func.Invoke(context.Database.GetDbConnection());
+                    if(isSuccess == true)
+                    {
+                        scope.Complete();
+                    }
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex.Message, "Transation Error");
+				}
+				finally
+				{
+					await context.Database.CloseConnectionAsync();
+				}
+
+			}
+		}
+		public async Task DBContextExcuteTransaction(DBtype dbtype1,DBtype dbtype2,Func<DbConnection, DbConnection, Task<bool>> func)
+		{
+			
+			// TransactionScope로 두 DB 동시 트랜잭션
+			
+			using (var context1 = await GetDBContext(dbtype1))
+			using (var context2 = await GetDBContext(dbtype2))
+            {
+				try
+				{
+					using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+					await context1.Database.OpenConnectionAsync();
+					await context2.Database.OpenConnectionAsync();
+
+					bool isSuccess = await func.Invoke(context1.Database.GetDbConnection(), context2.Database.GetDbConnection());
+					if(isSuccess == false)
+                    {
+						scope.Complete(); 
+					}
+                    
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "Transaction Error");
+					throw;
+				}
+				finally
+				{
+					await context1.Database.CloseConnectionAsync();
+					await context2.Database.CloseConnectionAsync();
+				}
+			}
+			
+		}
+
+
+	}
 }

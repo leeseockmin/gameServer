@@ -8,6 +8,8 @@ namespace FrogTailGameServer.ControllerLogic
 {
 	public partial class PacketHandler
 	{
+		//[TODO]
+		//Session 저장 기준을 AccessToken값을 따로 만들 예정
 
 		private T GetUserSession<T>() where T : class
 		{

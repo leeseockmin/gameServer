@@ -34,8 +34,6 @@ namespace FrogTailGameServer.ControllerLogic
 						if (userSession == null)
 						{
 							userSession = new RedisClient.UserSession();
-
-							isCreate = true;
 						}
 
 
@@ -77,11 +75,7 @@ namespace FrogTailGameServer.ControllerLogic
 							{
 								getAccountInfo = new DataBase.AccountDB.Account();
 							}
-
-
 						});
-
-
 
 						redisClient.SetUserSession(userSession);
 						SetUserSession(userSession);
