@@ -82,13 +82,13 @@ namespace FrogTailGameServer.MiddleWare
 				return HttpStatusCode.OK;
 			}
 
-			StringValues headers = context.Request.Headers["Authorization"];
-			if(headers == string.Empty)
+			var headers = context.Request.Headers;
+			if(headers == null || headers.Count < 2)
 			{
 				return HttpStatusCode.Unauthorized;
 			}
 
-			CustomIdentity idenytity = await GetIdentity(headers[0], headers[1]);
+			CustomIdentity idenytity = await GetIdentity(headers.ElementAt(0).Value, headers.ElementAt(1).Value);
 			if(idenytity == null || idenytity.UserSession == null)
 			{
 				return HttpStatusCode.Unauthorized;
