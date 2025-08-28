@@ -64,13 +64,14 @@ namespace FrogTailGameServer.ControllerLogic
 
 						if (isSuccess == false)
 						{
-							return ans;
+							// 에러 처리 
+							break;
 						}
 
 
-						await this._dataBaseManager.DBContextExcute(DB.DataBaseManager.DBtype.Account, async (accountDB) =>
+						await this._dataBaseManager.DBContextExcute(DB.DataBaseManager.DBtype.Account, async (accountDBConnection) =>
 						{
-							var getAccountInfo = await DB.Data.Logic.AccountDBLogic.AccountInfo.GetAccountInfo(accountDB, 1);
+							var getAccountInfo = await DB.Data.Logic.AccountDBLogic.AccountInfo.GetAccountInfo(accountDBConnection, 1);
 							if (getAccountInfo == null)
 							{
 								getAccountInfo = new DataBase.AccountDB.Account();
@@ -78,7 +79,7 @@ namespace FrogTailGameServer.ControllerLogic
 						});
 
 						redisClient.SetUserSession(userSession);
-						SetUserSession(userSession);
+						//SetUserSession(userSession);
 
 						ans.UserId = userSession.UserId;
 					}

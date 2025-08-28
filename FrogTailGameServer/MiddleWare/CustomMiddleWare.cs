@@ -10,6 +10,7 @@ using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
+using static Dapper.SqlMapper;
 
 namespace FrogTailGameServer.MiddleWare
 {
@@ -82,7 +83,7 @@ namespace FrogTailGameServer.MiddleWare
 			}
 
 			CustomIdentity idenytity = await GetIdentity(headers);
-			if(idenytity == null)
+			if(idenytity == null || idenytity.UserSession == null)
 			{
 				return HttpStatusCode.Unauthorized;
 			}
@@ -112,6 +113,7 @@ namespace FrogTailGameServer.MiddleWare
 			var redisClient = _serviceProvider.GetService<RedisClient>();
 			if(redisClient != null)
 			{
+				//[TODO]가져오고 나서 다시 한번 Session 시간 늘려준다 현재는 개발용이기 떄문에 추후 ExpireTime 추가 
 				var userSession = await redisClient.GetUserSession(Convert.ToInt64(authHeader));
 				idenytity.UserSession = userSession;
 			}
@@ -135,9 +137,16 @@ namespace FrogTailGameServer.MiddleWare
 			{
 				context.Response.OnStarting(state =>
 				{
-
+					
 					var httpContext = (HttpContext)state;
-					string authHeader = httpContext.User.Identity.Name;
+					var claimsPrincipal = httpContext.User as CustomPrincipal;
+					if (claimsPrincipal == null)
+					{
+						return null;
+					}
+
+					var identity = claimsPrincipal.Identity as CustomIdentity;
+					string authHeader = identity.UserId;
 					if (_devMode == false)
 					{
 						authHeader = SecretManager.GetInstance().EncryptString(authHeader);

@@ -14,12 +14,17 @@ namespace FrogTailGameServer.ControllerLogic
 		private T GetUserSession<T>() where T : class
 		{
 			var claimsPrincipal = _actionContextAccessor.ActionContext.HttpContext.User as CustomPrincipal;
-			if (claimsPrincipal == null || string.IsNullOrEmpty(claimsPrincipal.Identity.Name) == true)
+			if (claimsPrincipal == null)
 			{
 				return null;
 			}
-			var userIdentity = claimsPrincipal.Identity as CustomIdentity;
-			return userIdentity.UserSession as T;
+			var customIdenTity = claimsPrincipal.Identity as CustomIdentity;
+			if(customIdenTity == null)
+			{
+				return null;
+			}
+
+			return customIdenTity.UserSession as T;
 		}
 
 		void SetUserSession(RedisClient.UserSession userSession)
