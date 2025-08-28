@@ -119,6 +119,19 @@ namespace Common.Redis
 			return getObject;
 		}
 
+		private async Task HashDelete(string redisKey, string hashKey)
+		{
+			try
+			{
+				await this.GetDatabase().HashDeleteAsync(redisKey, hashKey);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex.Message);
+			}
+
+		}
+
 		private async Task ExpiryAsync(string redisKey, TimeSpan expire)
 		{
 			await this.GetDatabase().KeyExpireAsync(redisKey, expire);

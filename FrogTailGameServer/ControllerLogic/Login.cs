@@ -25,20 +25,6 @@ namespace FrogTailGameServer.ControllerLogic
 
 					try
 					{
-						var redisClient = _serviceProvider.GetService<RedisClient>();
-						if (redisClient == null)
-						{
-							ans.ErrorCode = Share.Common.ErrrorCode.UNKNOW_ERROR;
-							break;
-						}
-
-						bool isCreate = false;
-						var userSession = this.GetUserSession<RedisClient.UserSession>();
-						if (userSession == null)
-						{
-							userSession = new RedisClient.UserSession();
-						}
-
 
 						bool isSuccess = true;
 
@@ -71,6 +57,24 @@ namespace FrogTailGameServer.ControllerLogic
 							break;
 						}
 
+						var redisClient = _serviceProvider.GetService<RedisClient>();
+						if (redisClient == null)
+						{
+							ans.ErrorCode = Share.Common.ErrrorCode.UNKNOW_ERROR;
+							break;
+						}
+
+						bool isCreate = false;
+						var userSession = this.GetUserSession<RedisClient.UserSession>();
+						if (userSession == null)
+						{
+							userSession = new RedisClient.UserSession();
+						}
+						else
+						{
+							redisClient.RemoveUserSession(userSession.userId);
+						}
+
 
 						await this._dataBaseManager.DBContextExcute(DB.DataBaseManager.DBtype.Account, async (accountDBConnection) =>
 						{
@@ -80,6 +84,7 @@ namespace FrogTailGameServer.ControllerLogic
 								getAccountInfo = new DataBase.AccountDB.Account();
 							}
 						});
+
 						userSession.userToken = RandToken.GenerateUniqueToken();
 						await redisClient.SetUserSession(userSession);
 						//SetUserSession(userSession);

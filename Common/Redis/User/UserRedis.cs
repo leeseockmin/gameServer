@@ -15,9 +15,9 @@ namespace Common.Redis
 			public string userToken { get; set; }
 		}
 
-		public async Task<UserSession> GetUserSession(string key)
+		public async Task<UserSession> GetUserSession(string userId)
 		{
-			var getKey = string.Format(RedisKey.UserKey, key);
+			var getKey = string.Format(RedisKey.UserKey, userId);
 			var getUserSession = await HashGet<UserSession>(getKey, RedisHahField.SessionFieldKey);
 			return getUserSession;
 		}
@@ -28,10 +28,16 @@ namespace Common.Redis
 			await ExpiryAsync(getKey, TimeSpan.FromHours(12));
 		}
 
-		public async Task AddSessionExpireTime(string key)
+		public async Task AddUserSessionExpireTime(string userId)
 		{
-			var getKey = string.Format(RedisKey.UserKey, key);
+			var getKey = string.Format(RedisKey.UserKey, userId);
 			await ExpiryAsync(getKey, TimeSpan.FromHours(12));
+		}
+
+		public async Task RemoveUserSession(long userId)
+		{
+			var getKey = string.Format(RedisKey.UserKey, userId);
+			await HashDelete(getKey, RedisHahField.SessionFieldKey);
 		}
 
 	}

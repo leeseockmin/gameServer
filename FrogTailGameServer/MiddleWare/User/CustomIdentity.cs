@@ -18,7 +18,7 @@ namespace FrogTailGameServer.MiddleWare.User
         public int Frame { get; private set; }
         public string AuthenticationType { get; set; }
         public bool IsAuthenticated { get { return true; } }
-        public string Name { get { return UserId; } }
+        public string Name { get; set; }
         public Common.Redis.RedisClient.UserSession UserSession { get; set; }
 
     }

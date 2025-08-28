@@ -1,4 +1,5 @@
 ﻿using Common.Redis;
+using DataBase.GameDB;
 using FrogTailGameServer.ControllerLogic;
 using FrogTailGameServer.MiddleWare.Secret;
 using FrogTailGameServer.MiddleWare.User;
@@ -87,7 +88,7 @@ namespace FrogTailGameServer.MiddleWare
 				return HttpStatusCode.Unauthorized;
 			}
 
-			CustomIdentity idenytity = await GetIdentity(headers);
+			CustomIdentity idenytity = await GetIdentity(headers[0], headers[1]);
 			if(idenytity == null || idenytity.UserSession == null)
 			{
 				return HttpStatusCode.Unauthorized;
@@ -97,28 +98,42 @@ namespace FrogTailGameServer.MiddleWare
 			return HttpStatusCode.OK;
 		}
 
-		private async Task<CustomIdentity> GetIdentity(StringValues authHeader)
+		private async Task<CustomIdentity> GetIdentity(StringValues x_userId, StringValues userToken)
 		{
 		
 			CustomIdentity idenytity = null;
+			string userId = "";
 			if (_devMode == false)
 			{
-				var userId = SecretManager.GetInstance().GetDecryptString(authHeader);
+				userId = SecretManager.GetInstance().GetDecryptString(x_userId);
 				idenytity = new CustomIdentity(userId);
 			}
+			else
+			{
+				userId = x_userId;
+			}
+
 			if (idenytity == null)
 			{
-				idenytity = new CustomIdentity(authHeader);
+				idenytity = new CustomIdentity(userId);
 			}
 
 			var redisClient = _serviceProvider.GetService<RedisClient>();
 			if(redisClient != null)
 			{
-				var userSession = await redisClient.GetUserSession(authHeader);
+				var userSession = await redisClient.GetUserSession(userId);
 				if(userSession != null)
 				{
-					await redisClient.AddSessionExpireTime(authHeader);
+					if(userSession.userToken.CompareTo(userToken) != 0)
+					{
+						return null;
+					}
+					await redisClient.AddUserSessionExpireTime(userId);
 					idenytity.UserSession = userSession;
+				}
+				else
+				{
+					return null;
 				}
 			}
 
@@ -150,20 +165,32 @@ namespace FrogTailGameServer.MiddleWare
 					}
 
 					var identity = claimsPrincipal.Identity as CustomIdentity;
-					string authHeader = identity.UserId;
+					var userSession = identity.UserSession;
+
+					string ecnrptUserId = "";
 					if (_devMode == false)
 					{
-						authHeader = SecretManager.GetInstance().EncryptString(authHeader);
+						ecnrptUserId = SecretManager.GetInstance().EncryptString(userSession.userId.ToString());
+					}
+
+					if (httpContext.Response.Headers.ContainsKey("X-UserId") == false)
+					{
+						httpContext.Response.Headers.Add("X-UserId", $"{ecnrptUserId}");
+					}
+					else
+					{
+						httpContext.Response.Headers["X-UserId"] = $"{ecnrptUserId}";
 					}
 
 					if (httpContext.Response.Headers.ContainsKey("Authorization") == false)
 					{
-						httpContext.Response.Headers.Add("Authorization", $"{authHeader}");
+						httpContext.Response.Headers.Add("Authorization", $"{userSession.userToken}");
 					}
 					else
 					{
-						httpContext.Response.Headers["Authorization"] = $"{authHeader}";
+						httpContext.Response.Headers["Authorization"] = $"{userSession.userToken}";
 					}
+
 
 
 					return Task.CompletedTask;
