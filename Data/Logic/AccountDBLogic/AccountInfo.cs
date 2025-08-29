@@ -14,7 +14,7 @@ using System.Data.Common;
 
 namespace DB.Data.Logic.AccountDBLogic
 {
-	public static class AccountInfo
+	public class AccountInfo
 	{
 		public static async Task<Account> GetAccountInfo(DbConnection accountConnection, long accountId)
 		{
