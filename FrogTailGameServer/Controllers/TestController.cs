@@ -2,6 +2,7 @@
 using Share.Packet;
 using System.Text.Json.Nodes;
 using FrogTailGameServer.ControllerLogic;
+using Share.Common;
 namespace FrogTailGameServer.Controllers
 {
     [ApiController]
@@ -25,13 +26,17 @@ namespace FrogTailGameServer.Controllers
 		/// <returns></returns>
 
 		[HttpPost(Name = "SwaggerPacket")]
-		public async Task<PacketAnsPacket> SwaggerPacket(long userId, PacketId packetId, JsonObject packetBase)
+		public async Task<PacketAnsPacket> SwaggerPacket(string accessToken, PacketId packetId, JsonObject packetBase)
 		{
 			PacketAnsPacket response = null;
 			PacketReqeustBase receivePacket = new PacketReqeustBase(packetId);
+			receivePacket.RequestId = packetId;
 			receivePacket.PacketBody = packetBase.ToJsonString();
 			try
 			{
+				
+
+
 				var packetHandler = _serviceProvider.GetRequiredService<PacketHandler>();
 				response = await packetHandler.GetExcuteAPI(receivePacket);
 			}

@@ -81,12 +81,11 @@ namespace FrogTailGameServer.ControllerLogic
 							break;
 						}
 
-
 						var userSession = new RedisClient.UserSession();
 						userSession.userId = ans.UserId;
 						userSession.userToken = RandToken.GenerateUniqueToken();
 						await redisClient.SetUserSession(userSession);
-						//SetUserSession(userSession);
+						this.SetUserSession(userSession);
 
 						ans.UserId = userSession.userId;
 					}
@@ -101,27 +100,6 @@ namespace FrogTailGameServer.ControllerLogic
 				
 				
 
-			}
-			return ans;
-		}
-
-		/// <summary>
-		/// TestLogin 에 경우 위에 LoginPacket 이랑 값을 맞춰줘야됌
-		/// </summary>
-		/// <param name="userId"></param>
-		/// <param name="packet"></param>
-		/// <returns></returns>
-		private async Task<PacketAnsPacket> TestLoginReqPacketHanlder(long userId, PacketReqeustBase packet)
-		{
-			GCLoginAnsPacket ans = null;
-			var recvPacket = Newtonsoft.Json.JsonConvert.DeserializeObject<CGLoginReqPacket>(packet.PacketBody);
-			if (recvPacket != null)
-			{
-				ans = new GCLoginAnsPacket();
-				var userSession = new RedisClient.UserSession();
-				userSession.userId = 1;
-
-				ans.UserId = userSession.userId;
 			}
 			return ans;
 		}

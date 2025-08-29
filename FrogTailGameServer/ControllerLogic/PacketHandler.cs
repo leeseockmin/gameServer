@@ -60,14 +60,13 @@ namespace FrogTailGameServer.ControllerLogic
             }
         }
 
-        public async Task<PacketAnsPacket> GetExcuteAPI(PacketReqeustBase packetBase, long testUserId = 0, bool isTest = false)
+        public async Task<PacketAnsPacket> GetExcuteAPI(PacketReqeustBase packetBase)
         {
-            //테스트 일 경우 직렬화 시키기 어렵기 떄문에, 기존 Object형태로 갖고와 해당 형식에 맞게 아래 코드에서 수정해서 넣어준다.
-            if(isTest == true)
-            {
-                await TestLoginReqPacketHanlder(testUserId, packetBase);
+			if (packetBase.RequestId == PacketId.None)
+			{
+				packetBase.RequestId = PacketId.CG_Login_Req_Packet_Id;
 			}
-            var response = await _packetList[packetBase.RequestId](packetBase);
+			var response = await _packetList[packetBase.RequestId](packetBase);
             return response;
         }
 

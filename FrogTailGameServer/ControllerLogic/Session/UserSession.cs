@@ -27,9 +27,14 @@ namespace FrogTailGameServer.ControllerLogic
 			return customIdenTity.UserSession as T;
 		}
 
+		/// <summary>
+		/// 테스트 일떄만 사용 
+		/// </summary>
+		/// <param name="userSession"></param>
 		void SetUserSession(RedisClient.UserSession userSession)
 		{
 			CustomIdentity customIdentity = new CustomIdentity(userSession.userId.ToString());
+			customIdentity.UserSession = userSession;
 			_actionContextAccessor.ActionContext.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(customIdentity);
 		}
 

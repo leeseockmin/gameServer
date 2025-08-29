@@ -76,6 +76,10 @@ namespace FrogTailGameServer.MiddleWare
 			{
 				return HttpStatusCode.BadRequest;
 			}
+			if(receivePacket.RequestId == PacketId.None)
+			{
+				receivePacket.RequestId = PacketId.CG_Login_Req_Packet_Id;
+			}
 
 			if (receivePacket.RequestId == PacketId.CG_Login_Req_Packet_Id)
 			{
