@@ -1,4 +1,5 @@
 ﻿
+using DB.Data.GameDB;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -12,6 +13,7 @@ namespace DataBase.GameDB
 
         }
         public DbSet<UserInfo> userInfo { get; set; }
+        public DbSet<Character> character { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

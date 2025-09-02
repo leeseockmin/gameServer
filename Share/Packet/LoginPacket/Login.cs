@@ -14,6 +14,7 @@ namespace Share.Packet
 
 		}
 		public string DeviceId { get; set; }
+		public string NickName { get; set; }
 		public OsType OsType { get; set; }
 		public LoginType LogType { get; set; }
 		public string AccessToken { get; set; }

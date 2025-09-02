@@ -14,6 +14,7 @@ namespace Share.Common
 		UNKNOW_ERROR,
 		INVAILD_PACKET_INFO,
 		INVAILD_USER_TOKEN,
+		INVAILD_NICK_NAME,
 
 		
 	}

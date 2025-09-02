@@ -35,6 +35,14 @@ namespace FrogTailGameServer.ControllerLogic
 							isSuccess = false;
 							break;
 						}
+
+						if(string.IsNullOrEmpty(recvPacket.NickName) == false)
+						{
+							_logger.LogError($"Not Invailid Nick Name: {recvPacket.NickName}");
+							ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_NICK_NAME;
+							isSuccess = false;
+							break;
+						}
 						
 						switch (recvPacket.LogType)
 						{
@@ -69,6 +77,7 @@ namespace FrogTailGameServer.ControllerLogic
 						}
 						// this.GetUserSession<RedisClient.UserSession>();
 						bool isCreate = false;
+						long accountId = 0;
 						await this._dataBaseManager.DBContextExcuteTransaction(DB.DataBaseManager.DBtype.Account, async (accountDBConnection) =>
 						{
 							Account getAccountInfo = null;
@@ -80,7 +89,6 @@ namespace FrogTailGameServer.ControllerLogic
 								getAccountInfo.deviceId = recvPacket.DeviceId;
 								getAccountInfo.loginType = recvPacket.LogType;
 								getAccountInfo.updateDate = now;
-								getAccountInfo.lastLoginTime = now;
 
 								long lastAccountId = await DB.Data.Logic.AccountDBLogic.AccountInfo.InsertAccountInfo(accountDBConnection, getAccountInfo);
 								if(lastAccountId <= 0)
@@ -101,6 +109,7 @@ namespace FrogTailGameServer.ControllerLogic
 									//에러 추가
 									return false;
 								}
+								accountId = lastAccountId;
 
 								isCreate = true;
 							}
@@ -117,22 +126,34 @@ namespace FrogTailGameServer.ControllerLogic
 								getAccountInfo.updateDate = now;
 								getAccountInfo.lastLoginTime = now;
 
-
 								int affectd_cnt = await DB.Data.Logic.AccountDBLogic.AccountInfo.UpdateLoginAccountInfo(accountDBConnection, getAccountInfo);
 								if (affectd_cnt <= 0)
 								{
 									return false;
 								}
+								accountId = getAccountInfo.accountId;
+							}
+
+							return true;
+						});
+						await this._dataBaseManager.DBContextExcuteTransaction(DB.DataBaseManager.DBtype.Game, async (gameDBConnection) =>
+						{
+
+							UserInfo userInfo = null;
+							if (isCreate)
+							{
+								userInfo = new UserInfo();
+								userInfo.nickName = recvPacket.NickName;
+								userInfo.accountId = accountId;
+							}
+							else
+							{
+
 							}
 
 							return true;
 						});
 
-						
-						if (isCreate)
-						{
-
-						}
 
 					
 						var redisClient = _serviceProvider.GetService<RedisClient>();
