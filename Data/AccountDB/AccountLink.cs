@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace DataBase.AccountDB
 {
 
-	[Index(nameof(accountId), Name = "IX_ACCOUNT_LINX_ACCOUNT_ID")] 
+	[Index(nameof(accountId), nameof(loginType), Name = "IX_ACCOUNT_LINX_ACCOUNT_ID")] 
 	[Index(nameof(loginType), nameof(accessToken), Name = "IX_ACCOUNT_LINK_LOGIN_ACCESS")]
 	[Table("accountlink")] // 테이블 이름 지정
 	public class AccountLink : IModelCreateEntity

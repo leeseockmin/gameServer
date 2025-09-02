@@ -3,6 +3,7 @@ using System;
 using DataBase.AccountDB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DB.Data.Migrations.AccountMigrations
 {
     [DbContext(typeof(AccountDBContext))]
-    partial class AccountDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250902105232_ChangeColumn")]
+    partial class ChangeColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,7 +77,7 @@ namespace DB.Data.Migrations.AccountMigrations
 
                     b.HasIndex(new[] { "loginType", "accessToken" }, "IX_ACCOUNT_LINK_LOGIN_ACCESS");
 
-                    b.HasIndex(new[] { "accountId", "loginType" }, "IX_ACCOUNT_LINX_ACCOUNT_ID");
+                    b.HasIndex(new[] { "accountId" }, "IX_ACCOUNT_LINX_ACCOUNT_ID");
 
                     b.ToTable("accountlink");
                 });

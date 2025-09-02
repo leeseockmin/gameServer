@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DataBase.GameDB
 {
-    public class User
+    public class UserInfo
     {
         [Key]
         public long userId { get; set; }

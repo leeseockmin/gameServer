@@ -13,7 +13,8 @@ namespace Share.Common
         Google = 2,
         KaKao = 3,
         Stove = 4,
-
+        Apple = 5,
+        Email = 6,
     }
     public enum OsType
     {

@@ -18,6 +18,7 @@ using DataBase.AccountDB;
 using DataBase.GameDB;
 using DB;
 using GameServer.Logic.Utils;
+using FrogTailGameServer.Logic.Utils;
 
 try
 {
@@ -50,9 +51,10 @@ try
     }, ServiceLifetime.Singleton);
 
     builder.Services.AddSingleton<DataBaseManager>();
+	
 
 
-    builder.Services.AddEndpointsApiExplorer();
+	builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
     builder.Services.AddDistributedMemoryCache();
@@ -92,9 +94,16 @@ try
     {
         throw new Exception("Packet Handler Error");
     }
-    packetHandler.InitPacketHandler();
-    UniqueKey.LoadUniqueKey(1);
 
+	var firebaseSection = app.Configuration.GetSection("FirebaseConfig");
+	var firebaseDict = firebaseSection.GetChildren()
+		.ToDictionary(x => x.Key, x => x.Value);
+	var fireBasejson = Newtonsoft.Json.JsonConvert.SerializeObject(firebaseDict);
+	FireBase.InitFireBase(fireBasejson);
+
+
+	packetHandler.InitPacketHandler();
+    UniqueKey.LoadUniqueKey(1);
 
 
 	app.UseMiddleware<CustomMiddleWare>();
@@ -125,5 +134,6 @@ try
 catch(Exception ex)
 {
     Console.WriteLine(ex.ToString());
+    throw;
 }
 

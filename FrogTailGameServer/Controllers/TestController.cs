@@ -34,9 +34,6 @@ namespace FrogTailGameServer.Controllers
 			receivePacket.PacketBody = packetBase.ToJsonString();
 			try
 			{
-				
-
-
 				var packetHandler = _serviceProvider.GetRequiredService<PacketHandler>();
 				response = await packetHandler.GetExcuteAPI(receivePacket);
 			}

@@ -8,7 +8,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace DataBase.AccountDB
 {
 
-	[Index(nameof(userId), Name = "IX_ACCOUNT_USER_ID")] 
 	[Table("account")] 
 	public class Account : IModelCreateEntity
     {
@@ -20,8 +19,6 @@ namespace DataBase.AccountDB
         [StringLength(1024)]
         public string deviceId { get; set; }
 
-        [Required]
-        public long userId { get; set; }
         public OsType osType { get; set; }
         public LoginType loginType { get; set; }
         public DateTime createDate { get; set; }

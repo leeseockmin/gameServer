@@ -11,7 +11,7 @@ namespace DataBase.GameDB
         {
 
         }
-        public DbSet<User> user { get; set; }
+        public DbSet<UserInfo> userInfo { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
