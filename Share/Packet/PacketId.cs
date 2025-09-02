@@ -9,10 +9,16 @@ namespace Share.Packet
 	public enum PacketId
 	{
 		None = 0,
+		
+		
 		CG_Login_Req_Packet_Id = 1,
 		GC_Login_Ans_Packet_Id = 2,
-		CG_ShopList_Req_Packet_Id = 3,
-		GC_ShopList_Ans_Packet_Id = 4,
+		CG_VerityLogin_Req_Packet_ID = 3,
+		GC_VerityLogin_Ans_Packet_ID = 4,
+
+
+		CG_ShopList_Req_Packet_Id = 100,
+		GC_ShopList_Ans_Packet_Id = 101,
 
 	}
 }

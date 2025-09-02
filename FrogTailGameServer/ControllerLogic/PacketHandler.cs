@@ -19,13 +19,11 @@ namespace FrogTailGameServer.ControllerLogic
     {
         private Dictionary<PacketId, Func<PacketReqeustBase, Task<PacketAnsPacket>>> _packetList = null;
         private readonly IActionContextAccessor _actionContextAccessor;
-        private readonly ILogger<PacketHandler> _logger;
 		private readonly IServiceProvider _serviceProvider;
         private readonly DataBaseManager _dataBaseManager;
-		public PacketHandler(IServiceProvider serviceProvider, IActionContextAccessor actionContextAccessor, ILogger<PacketHandler> logger, DataBaseManager dataBaseManager)
+		public PacketHandler(IServiceProvider serviceProvider, IActionContextAccessor actionContextAccessor, DataBaseManager dataBaseManager)
         {
             _actionContextAccessor = actionContextAccessor;
-            _logger = logger;
 			_packetList = new Dictionary<PacketId, Func<PacketReqeustBase, Task<PacketAnsPacket>>>();
             _serviceProvider = serviceProvider;
             _dataBaseManager = dataBaseManager;

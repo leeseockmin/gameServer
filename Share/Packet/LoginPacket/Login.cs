@@ -21,11 +21,33 @@ namespace Share.Packet
 	}
 	public class GCLoginAnsPacket : PacketAnsPacket
 	{
-		public GCLoginAnsPacket()
+		public GCLoginAnsPacket() 
 		{
 			ErrorCode = Common.ErrrorCode.SUCCESS;
 		}
 		public string UserToken { get; set; }
 		public long UserId { get; set; }
 	}
+
+
+	public class CGVerityLoginReqPacket : PacketReqeustBase
+	{
+
+		public CGVerityLoginReqPacket() : base(PacketId.CG_VerityLogin_Req_Packet_ID)
+		{
+
+		}
+		public OsType OsType { get; set; }
+		public LoginType LogType { get; set; }
+		public string AccessToken { get; set; }
+	}
+
+	public class GCVerityLoginAnsPacket : PacketAnsPacket
+	{
+		public GCVerityLoginAnsPacket()
+		{
+			ErrorCode = Common.ErrrorCode.SUCCESS;
+		}
+	}
+
 }

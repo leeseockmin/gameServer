@@ -20,6 +20,7 @@ using DB;
 using GameServer.Logic.Utils;
 using FrogTailGameServer.Logic.Utils;
 using FrogTailGameServer.Swagger;
+using Serilog;
 
 try
 {
@@ -75,6 +76,18 @@ try
 		// 커스텀 Header 필터 등록
 		c.OperationFilter<AddCustomHeaders>();
 	});
+
+	Log.Logger = new LoggerConfiguration()
+	.ReadFrom.Configuration(builder.Configuration) 
+	.WriteTo.Console()                             
+	.WriteTo.File(
+		path: "Logs/log-.txt",                    
+		rollingInterval: RollingInterval.Day,    
+		outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+	)
+	.CreateLogger();
+
+	builder.Host.UseSerilog();
 
 	var app = builder.Build();
 
