@@ -188,11 +188,11 @@ namespace FrogTailGameServer.MiddleWare
 
 					if (httpContext.Response.Headers.ContainsKey("Authorization") == false)
 					{
-						httpContext.Response.Headers.Add("Authorization", $"{userSession.userToken}");
+						httpContext.Response.Headers.Add("Authorization", $"Bearer {userSession.userToken}");
 					}
 					else
 					{
-						httpContext.Response.Headers["Authorization"] = $"{userSession.userToken}";
+						httpContext.Response.Headers["Authorization"] = $"Bearer {userSession.userToken}";
 					}
 
 

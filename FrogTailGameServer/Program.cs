@@ -19,6 +19,7 @@ using DataBase.GameDB;
 using DB;
 using GameServer.Logic.Utils;
 using FrogTailGameServer.Logic.Utils;
+using FrogTailGameServer.Swagger;
 
 try
 {
@@ -67,7 +68,15 @@ try
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-    var app = builder.Build();
+	builder.Services.AddSwaggerGen(c =>
+	{
+		c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Local Test", Version = "v1" });
+
+		// 커스텀 Header 필터 등록
+		c.OperationFilter<AddCustomHeaders>();
+	});
+
+	var app = builder.Build();
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
