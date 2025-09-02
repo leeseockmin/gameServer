@@ -24,6 +24,7 @@ namespace Share.Packet
 		{
 			ErrorCode = Common.ErrrorCode.SUCCESS;
 		}
+		public string UserToken { get; set; }
 		public long UserId { get; set; }
 	}
 }

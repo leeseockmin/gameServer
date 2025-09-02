@@ -149,6 +149,7 @@ namespace FrogTailGameServer.ControllerLogic
 						await redisClient.SetUserSession(userSession);
 						this.SetUserSession(userSession);
 
+						ans.UserToken = userSession.userToken;
 						ans.UserId = userSession.userId;
 					}
 					catch (Exception ex)
