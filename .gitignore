@@ -40,3 +40,9 @@ packages/
 
 # 환경설정 파일 (추가 부분)
 appsettings*.json
+
+# Logs 폴더 전체 무시
+Logs/
+
+# 또는 특정 패턴만 무시
+Logs/log-*.txt

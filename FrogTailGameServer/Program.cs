@@ -81,9 +81,9 @@ try
 	.ReadFrom.Configuration(builder.Configuration) 
 	.WriteTo.Console()                             
 	.WriteTo.File(
-		path: "Logs/log-.txt",                    
-		rollingInterval: RollingInterval.Day,    
-		outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+        path: "Logs/log-{Date}.txt",
+	    rollingInterval: RollingInterval.Day,
+	    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
 	)
 	.CreateLogger();
 
