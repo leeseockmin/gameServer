@@ -49,4 +49,8 @@
     <ProjectReference Include="..\Share\Share.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Logs\" />
+  </ItemGroup>
+
 </Project>
