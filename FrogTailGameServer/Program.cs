@@ -30,7 +30,6 @@ try
     builder.WebHost.ConfigureKestrel(serverOptions =>
     {
         // Set properties and call methods on options
-        serverOptions.Listen(IPAddress.Loopback, 9000);
         serverOptions.ListenAnyIP(9000);
     }).UseKestrel();
 
@@ -155,7 +154,6 @@ try
 }
 catch(Exception ex)
 {
-    Console.WriteLine(ex.ToString());
-    throw;
+	throw new Exception("Application Error :" , ex);
 }
 
