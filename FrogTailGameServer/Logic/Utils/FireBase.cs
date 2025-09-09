@@ -35,8 +35,6 @@ namespace FrogTailGameServer.Logic.Utils
 			try
 			{
 				FirebaseToken decoded = await FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(idToken);
-				;
-				
 				if (decoded.Claims.TryGetValue("firebase", out object firebaseObj))
 				{
 					string jsonString = firebaseObj.ToString();
