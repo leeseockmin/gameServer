@@ -16,7 +16,7 @@ namespace Share.Packet
 		public string DeviceId { get; set; }
 		public string NickName { get; set; }
 		public OsType OsType { get; set; }
-		public LoginType LogType { get; set; }
+		public LoginType LoginType { get; set; }
 		public string AccessToken { get; set; }
 	}
 	public class GCLoginAnsPacket : PacketAnsPacket
@@ -33,12 +33,12 @@ namespace Share.Packet
 	public class CGVerityLoginReqPacket : PacketReqeustBase
 	{
 
-		public CGVerityLoginReqPacket() : base(PacketId.CG_VerityLogin_Req_Packet_ID)
+		public CGVerityLoginReqPacket() : base(PacketId.CG_VerityLogin_Req_Packet_Id)
 		{
 
 		}
 		public OsType OsType { get; set; }
-		public LoginType LogType { get; set; }
+		public LoginType LoginType { get; set; }
 		public string AccessToken { get; set; }
 	}
 

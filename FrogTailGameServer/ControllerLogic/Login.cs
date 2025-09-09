@@ -13,11 +13,11 @@ namespace FrogTailGameServer.ControllerLogic
 {
     public partial class PacketHandler
 	{
-
-		private async Task<PacketAnsPacket> VertifyLoginReqPacketHanlder(PacketReqeustBase packet)
+		
+		private async Task<PacketAnsPacket> VerityLoginReqPacketHanlder(PacketReqeustBase packet)
 		{
 			GCLoginAnsPacket ans = null;
-			var recvPacket = Newtonsoft.Json.JsonConvert.DeserializeObject<CGLoginReqPacket>(packet.PacketBody);
+			var recvPacket = Newtonsoft.Json.JsonConvert.DeserializeObject<CGVerityLoginReqPacket>(packet.PacketBody);
 			if (recvPacket == null)
 			{
 				ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_PACKET_INFO;
@@ -30,21 +30,14 @@ namespace FrogTailGameServer.ControllerLogic
 				{
 
 					DateTime now = DateTime.UtcNow;
-					if (string.IsNullOrEmpty(recvPacket.AccessToken) == false)
+					if (string.IsNullOrEmpty(recvPacket.AccessToken) == true)
 					{
 						Log.Error($"[VertifyLogin] Not Invailid AccessToken : {recvPacket.AccessToken}");
 						ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_USER_TOKEN;
 						break;
 					}
 
-					if (string.IsNullOrEmpty(recvPacket.NickName) == false)
-					{
-						Log.Error($"[VertifyLogin] Not Invailid Nick Name: {recvPacket.NickName}");
-						ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_NICK_NAME;
-						break;
-					}
-
-					switch (recvPacket.LogType)
+					switch (recvPacket.LoginType)
 					{
 						case Share.Common.LoginType.Guest:
 							{
@@ -52,12 +45,13 @@ namespace FrogTailGameServer.ControllerLogic
 							break;
 						case Share.Common.LoginType.Google:
 						case Share.Common.LoginType.Apple:
-							{
+						case Share.Common.LoginType.Email:
+						{
 								var loginType = await FireBase.GetLoginProviderAsync(recvPacket.AccessToken);
-								if (loginType != recvPacket.LogType)
+								if (loginType != recvPacket.LoginType)
 								{
 									// 에러 추가
-									Log.Error($"[VertifyLogin] Not Invailid LoginType: {recvPacket.LogType} , AccessToken : {recvPacket.AccessToken}");
+									Log.Error($"[VertifyLogin] Not Invailid LoginType: {recvPacket.LoginType} , AccessToken : {recvPacket.AccessToken}");
 									ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_PACKET_INFO;
 									break;
 								}
@@ -65,7 +59,7 @@ namespace FrogTailGameServer.ControllerLogic
 							break;
 						default:
 							{
-								Log.Error($"[VertifyLogin] Not Invailid LogType : {recvPacket.LogType}");
+								Log.Error($"[VertifyLogin] Not Invailid LogType : {recvPacket.LoginType}");
 								ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_USER_TOKEN;
 							}
 							break;
@@ -139,7 +133,7 @@ namespace FrogTailGameServer.ControllerLogic
 						break;
 					}
 						
-					switch (recvPacket.LogType)
+					switch (recvPacket.LoginType)
 					{
 						case Share.Common.LoginType.Guest:
 							{
@@ -149,7 +143,7 @@ namespace FrogTailGameServer.ControllerLogic
 						case Share.Common.LoginType.Apple:
 							{
 								var loginType = await FireBase.GetLoginProviderAsync(recvPacket.AccessToken);
-								if(loginType != recvPacket.LogType)
+								if(loginType != recvPacket.LoginType)
 								{
 									// 에러 추가
 									ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_PACKET_INFO;
@@ -159,7 +153,7 @@ namespace FrogTailGameServer.ControllerLogic
 							break;
 						default:
 							{
-								Log.Error($"[LoginReqPacketHanlder] Not Invailid LogType : {recvPacket.LogType}");
+								Log.Error($"[LoginReqPacketHanlder] Not Invailid LogType : {recvPacket.LoginType}");
 								ans.ErrorCode = Share.Common.ErrrorCode.INVAILD_USER_TOKEN;
 							}
 							break;
@@ -175,13 +169,13 @@ namespace FrogTailGameServer.ControllerLogic
 					await this._dataBaseManager.DBContextExcuteTransaction(DB.DataBaseManager.DBtype.Account, async (accountDBConnection) =>
 					{
 						Account getAccountInfo = null;
-						var getAccountLinkInfo = await DB.Data.Logic.AccountDBLogic.AccountLinkInfo.GetAccountLinkInfo(accountDBConnection, recvPacket.LogType, recvPacket.AccessToken);
+						var getAccountLinkInfo = await DB.Data.Logic.AccountDBLogic.AccountLinkInfo.GetAccountLinkInfo(accountDBConnection, recvPacket.LoginType, recvPacket.AccessToken);
 						if(getAccountLinkInfo == null)
 						{
 							getAccountInfo = new DataBase.AccountDB.Account();
 							getAccountInfo.osType = recvPacket.OsType;
 							getAccountInfo.deviceId = recvPacket.DeviceId;
-							getAccountInfo.loginType = recvPacket.LogType;
+							getAccountInfo.loginType = recvPacket.LoginType;
 							getAccountInfo.updateDate = now;
 
 							long lastAccountId = await DB.Data.Logic.AccountDBLogic.AccountInfo.InsertAccountInfo(accountDBConnection, getAccountInfo);
@@ -192,7 +186,7 @@ namespace FrogTailGameServer.ControllerLogic
 							}
 
 							getAccountLinkInfo = new AccountLink();
-							getAccountLinkInfo.loginType = recvPacket.LogType;
+							getAccountLinkInfo.loginType = recvPacket.LoginType;
 							getAccountLinkInfo.accessToken = recvPacket.AccessToken;
 							getAccountLinkInfo.createDate = now;
 							getAccountLinkInfo.accountId = lastAccountId;
@@ -216,7 +210,7 @@ namespace FrogTailGameServer.ControllerLogic
 							}
 
 							getAccountInfo.osType = recvPacket.OsType;
-							getAccountInfo.loginType = recvPacket.LogType;
+							getAccountInfo.loginType = recvPacket.LoginType;
 							getAccountInfo.updateDate = now;
 							getAccountInfo.lastLoginTime = now;
 

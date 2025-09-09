@@ -5,6 +5,7 @@ using FrogTailGameServer.MiddleWare.Secret;
 using FrogTailGameServer.MiddleWare.User;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Converters;
+using Serilog;
 using Share.Packet;
 using System.Net;
 using System.Net.Mail;
@@ -39,14 +40,10 @@ namespace FrogTailGameServer.MiddleWare
 				if (httpStatusCode != HttpStatusCode.OK)
 				{
 					context.Response.StatusCode = (int)httpStatusCode;
-					throw new Exception($"Not Unauthoize User ErrorCode:{httpStatusCode}");
+					Log.Error($"Not Unauthoize User ErrorCode:{httpStatusCode}");
+					throw new Exception();
 				}
 
-				if (context.User.Identity.IsAuthenticated == false)
-				{
-					context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-					throw new Exception($"context.User.Identity.IsAuthenticated  ErrorCode:{httpStatusCode}");
-				}
 				SendResponse(context);
 
 				await _next(context);
@@ -55,6 +52,8 @@ namespace FrogTailGameServer.MiddleWare
 			{
 				_logger.LogError(ex.Message);
 				context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+				Log.Error($"context.User.Identity.IsAuthenticated  Error:{ex.Message}");
+				throw new Exception();
 			}
 			
 		}
@@ -85,7 +84,10 @@ namespace FrogTailGameServer.MiddleWare
 			{
 				return HttpStatusCode.OK;
 			}
-
+			else if (receivePacket.RequestId == PacketId.CG_VerityLogin_Req_Packet_Id)
+			{
+				return HttpStatusCode.OK;
+			}
 			var headers = context.Request.Headers;
 			if(headers == null || headers.Count < 2)
 			{
