@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Security.Principal;
 using FrogTailGameServer;
-using FrogTailGameServer.ControllerLogic;
 using FrogTailGameServer.MiddleWare.User;
 
 namespace FrogTailGameServer.MiddleWare.User

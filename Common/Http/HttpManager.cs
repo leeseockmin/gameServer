@@ -1,53 +1,46 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Common.Http
 {
     public class HttpManager
     {
         private static HttpManager Instance;
+        private static readonly HttpClient _httpClient = new HttpClient();
+
         public async Task<T> ExcuteHttp<T, K>(string url, K requestData, Dictionary<string, string> headers = null) where T : class
                                              where K : class
         {
             var json = JsonConvert.SerializeObject(requestData);
-            using (HttpClient client = new HttpClient())
+            try
             {
-                try
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                if (headers != null && headers.Count > 0)
                 {
-
-                    StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
-                    if(headers != null && headers.Count > 0)
+                    foreach (var header in headers)
                     {
-                        foreach(var header in headers)
-                        {
-                            client.DefaultRequestHeaders.Add(header.Key, header.Value);
-                        }
+                        request.Headers.TryAddWithoutValidation(header.Key, header.Value);
                     }
-
-                    var result = await client.PostAsync(url, content);
-                    if (result.IsSuccessStatusCode == true)
-                    {
-                        var response = await result.Content.ReadAsStringAsync();
-
-                        var data = JsonConvert.DeserializeObject<T>(response);
-                        return data;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-
                 }
-                catch (Exception ex)
+
+                var result = await _httpClient.SendAsync(request);
+                if (result.IsSuccessStatusCode == true)
                 {
-                    Debug.WriteLine(ex);
+                    var response = await result.Content.ReadAsStringAsync();
+                    var data = JsonConvert.DeserializeObject<T>(response);
+                    return data;
+                }
+                else
+                {
                     return null;
                 }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "[HttpManager] ExcuteHttp failed for {Url}", url);
+                return null;
             }
         }
 

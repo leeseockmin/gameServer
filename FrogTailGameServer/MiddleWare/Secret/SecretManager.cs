@@ -9,18 +9,44 @@ namespace FrogTailGameServer.MiddleWare.Secret
 	{
 		private static SecretManager Instance = null;
 		private readonly byte[] _key;
-		public SecretManager()
+
+		private const int RequiredKeyLength = 32; // AES-256
+
+		public SecretManager(string encryptionKey)
 		{
-			_key = Encoding.UTF8.GetBytes("Hi");
+			if (string.IsNullOrEmpty(encryptionKey))
+			{
+				throw new ArgumentException("Encryption key must be provided in configuration.");
+			}
+
+			var keyBytes = Encoding.UTF8.GetBytes(encryptionKey);
+			if (keyBytes.Length < RequiredKeyLength)
+			{
+				// SHA-256으로 해싱하여 정확히 32바이트 키 생성
+				using var sha256 = SHA256.Create();
+				_key = sha256.ComputeHash(keyBytes);
+			}
+			else
+			{
+				_key = keyBytes[..RequiredKeyLength];
+			}
 		}
 
 		public static SecretManager GetInstance()
 		{
-			if(Instance == null)
+			if (Instance == null)
 			{
-				Instance = new SecretManager();
+				throw new InvalidOperationException("SecretManager has not been initialized. Call Initialize() first.");
 			}
 			return Instance;
+		}
+
+		public static void Initialize(string encryptionKey)
+		{
+			if (Instance == null)
+			{
+				Instance = new SecretManager(encryptionKey);
+			}
 		}
 
 		public string EncryptString(string plainText)

@@ -22,3 +22,6 @@
  
 - Unique Key
   - (https://github.com/leeseockmin/gameServer/blob/main/FrogTailGameServer/Logic/Utils/UniqueKey.cs)
+
+## Claude Code 적용 진행중. 
+## .md 파일 관리하는법 스터디 진행 후. 적용도 같이할 예정

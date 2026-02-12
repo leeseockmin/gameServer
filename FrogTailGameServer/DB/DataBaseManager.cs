@@ -142,9 +142,9 @@ namespace DB
 					await context2.Database.OpenConnectionAsync();
 
 					bool isSuccess = await func.Invoke(context1.Database.GetDbConnection(), context2.Database.GetDbConnection());
-					if(isSuccess == false)
+					if(isSuccess == true)
                     {
-						scope.Complete(); 
+						scope.Complete();
 					}
                     
 				}

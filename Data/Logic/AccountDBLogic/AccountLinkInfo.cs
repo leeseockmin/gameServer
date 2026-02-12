@@ -1,18 +1,7 @@
-﻿
-using DataBase;
-using DataBase.AccountDB;
-using DataBase.GameDB;
-using Microsoft.EntityFrameworkCore;
+﻿using DataBase.AccountDB;
 using Dapper;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.Common;
 using Share.Common;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace DB.Data.Logic.AccountDBLogic
 {
@@ -20,17 +9,17 @@ namespace DB.Data.Logic.AccountDBLogic
 	{
 		public static async Task<AccountLink> GetAccountLinkInfo(DbConnection accountConnection, LoginType loginType, string accessToken)
 		{
-			var query = $"SELECT * FROM accountLink WHERE loginType = {loginType} AND accessToken = {accessToken} ";
+			var query = "SELECT * FROM accountLink WHERE loginType = @LoginType AND accessToken = @AccessToken";
 
-			var result = await accountConnection.QueryFirstOrDefaultAsync<AccountLink>(query);
+			var result = await accountConnection.QueryFirstOrDefaultAsync<AccountLink>(query, new { LoginType = (int)loginType, AccessToken = accessToken });
 			return result;
 		}
 
 		public static async Task<List<AccountLink>> GetAccountLinkInfos(DbConnection accountConnection, long accountId)
 		{
-			var query = $"SELECT * FROM account WHERE accountId = {accountId} ";
+			var query = "SELECT * FROM accountLink WHERE accountId = @AccountId";
 
-			var result = await accountConnection.QueryAsync<AccountLink>(query);
+			var result = await accountConnection.QueryAsync<AccountLink>(query, new { AccountId = accountId });
 			return result.ToList();
 		}
 

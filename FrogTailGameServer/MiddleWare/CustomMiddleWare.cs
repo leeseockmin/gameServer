@@ -1,18 +1,9 @@
 ﻿using Common.Redis;
-using DataBase.GameDB;
-using FrogTailGameServer.ControllerLogic;
 using FrogTailGameServer.MiddleWare.Secret;
 using FrogTailGameServer.MiddleWare.User;
 using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json.Converters;
 using Serilog;
-using Share.Packet;
 using System.Net;
-using System.Net.Mail;
-using System.Security.Claims;
-using System.Security.Principal;
-using System.Text;
-using static Dapper.SqlMapper;
 
 namespace FrogTailGameServer.MiddleWare
 {
@@ -23,6 +14,14 @@ namespace FrogTailGameServer.MiddleWare
 		private readonly IWebHostEnvironment _env;
 		private readonly bool _devMode = false;
 		private readonly IServiceProvider _serviceProvider;
+
+		private static readonly string[] AnonymousPaths = new[]
+		{
+			"/api/auth/login",
+			"/api/auth/verify",
+			"/swagger"
+		};
+
 		public CustomMiddleWare(IServiceProvider serviceProvider, RequestDelegate next, ILogger<CustomMiddleWare> logger, IWebHostEnvironment env)
 		{
 			_next = next;
@@ -40,102 +39,90 @@ namespace FrogTailGameServer.MiddleWare
 				if (httpStatusCode != HttpStatusCode.OK)
 				{
 					context.Response.StatusCode = (int)httpStatusCode;
-					Log.Error($"Not Unauthoize User ErrorCode:{httpStatusCode}");
-					throw new Exception();
+					Log.Error($"Unauthorized request: {httpStatusCode}");
+					return;
 				}
 
 				SendResponse(context);
 
 				await _next(context);
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
-				_logger.LogError(ex.Message);
+				_logger.LogError(ex, "Middleware authentication error");
 				context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-				Log.Error($"context.User.Identity.IsAuthenticated  Error:{ex.Message}");
-				throw new Exception();
 			}
-			
 		}
 
-		private async Task<HttpStatusCode> IsAuth(HttpContext context)
+		private Task<HttpStatusCode> IsAuth(HttpContext context)
 		{
-			string requestBody = string.Empty;
+			var path = context.Request.Path.Value ?? string.Empty;
 
-			context.Request.EnableBuffering();
-			long originalPosition = context.Request.Body.Position;
-			using (StreamReader reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 2048, true))
+			foreach (var anonymousPath in AnonymousPaths)
 			{
-				requestBody = await reader.ReadToEndAsync();
-			}
-			context.Request.Body.Position = originalPosition;
-
-			var receivePacket = Newtonsoft.Json.JsonConvert.DeserializeObject<PacketReqeustBase>(requestBody);
-			if(receivePacket == null)
-			{
-				return HttpStatusCode.BadRequest;
-			}
-			if(receivePacket.RequestId == PacketId.None)
-			{
-				receivePacket.RequestId = PacketId.CG_Login_Req_Packet_Id;
+				if (path.StartsWith(anonymousPath, StringComparison.OrdinalIgnoreCase))
+				{
+					return Task.FromResult(HttpStatusCode.OK);
+				}
 			}
 
-			if (receivePacket.RequestId == PacketId.CG_Login_Req_Packet_Id)
-			{
-				return HttpStatusCode.OK;
-			}
-			else if (receivePacket.RequestId == PacketId.CG_VerityLogin_Req_Packet_Id)
-			{
-				return HttpStatusCode.OK;
-			}
+			return ValidateSession(context);
+		}
+
+		private async Task<HttpStatusCode> ValidateSession(HttpContext context)
+		{
 			var headers = context.Request.Headers;
-			if(headers == null || headers.Count < 2)
+			if (headers == null)
 			{
 				return HttpStatusCode.Unauthorized;
 			}
 
-			CustomIdentity idenytity = await GetIdentity(headers.ElementAt(0).Value, headers.ElementAt(1).Value);
-			if(idenytity == null || idenytity.UserSession == null)
+			if (!headers.ContainsKey("X-UserId") || !headers.ContainsKey("Authorization"))
 			{
 				return HttpStatusCode.Unauthorized;
 			}
 
-			context.User = new CustomPrincipal(idenytity);
+			CustomIdentity identity = await GetIdentity(headers["X-UserId"], headers["Authorization"]);
+			if (identity == null || identity.UserSession == null)
+			{
+				return HttpStatusCode.Unauthorized;
+			}
+
+			context.User = new CustomPrincipal(identity);
 			return HttpStatusCode.OK;
 		}
 
 		private async Task<CustomIdentity> GetIdentity(StringValues x_userId, StringValues userToken)
 		{
-		
-			CustomIdentity idenytity = null;
+			CustomIdentity identity = null;
 			string userId = "";
 			if (_devMode == false)
 			{
 				userId = SecretManager.GetInstance().GetDecryptString(x_userId);
-				idenytity = new CustomIdentity(userId);
+				identity = new CustomIdentity(userId);
 			}
 			else
 			{
 				userId = x_userId;
 			}
 
-			if (idenytity == null)
+			if (identity == null)
 			{
-				idenytity = new CustomIdentity(userId);
+				identity = new CustomIdentity(userId);
 			}
 
 			var redisClient = _serviceProvider.GetService<RedisClient>();
-			if(redisClient != null)
+			if (redisClient != null)
 			{
 				var userSession = await redisClient.GetUserSession(userId);
-				if(userSession != null)
+				if (userSession != null)
 				{
-					if(userSession.userToken.CompareTo(userToken) != 0)
+					if (userSession.userToken.CompareTo(userToken) != 0)
 					{
 						return null;
 					}
 					await redisClient.AddUserSessionExpireTime(userId);
-					idenytity.UserSession = userSession;
+					identity.UserSession = userSession;
 				}
 				else
 				{
@@ -143,17 +130,7 @@ namespace FrogTailGameServer.MiddleWare
 				}
 			}
 
-			return idenytity;
-		}
-		private string GetAuthHeader(string authHeader)
-		{
-			var getParametars = authHeader.Split(":");
-			if(getParametars == null || getParametars.Count() != 2)
-			{
-				return null;
-			}
-
-			return getParametars.LastOrDefault();
+			return identity;
 		}
 
 		private void SendResponse(HttpContext context)
@@ -162,30 +139,33 @@ namespace FrogTailGameServer.MiddleWare
 			{
 				context.Response.OnStarting(state =>
 				{
-					
 					var httpContext = (HttpContext)state;
 					var claimsPrincipal = httpContext.User as CustomPrincipal;
 					if (claimsPrincipal == null)
 					{
-						return null;
+						return Task.CompletedTask;
 					}
 
 					var identity = claimsPrincipal.Identity as CustomIdentity;
+					if (identity == null || identity.UserSession == null)
+					{
+						return Task.CompletedTask;
+					}
 					var userSession = identity.UserSession;
 
-					string ecnrptUserId = "";
+					string encryptedUserId = "";
 					if (_devMode == false)
 					{
-						ecnrptUserId = SecretManager.GetInstance().EncryptString(userSession.userId.ToString());
+						encryptedUserId = SecretManager.GetInstance().EncryptString(userSession.userId.ToString());
 					}
 
 					if (httpContext.Response.Headers.ContainsKey("X-UserId") == false)
 					{
-						httpContext.Response.Headers.Add("X-UserId", $"{ecnrptUserId}");
+						httpContext.Response.Headers.Add("X-UserId", $"{encryptedUserId}");
 					}
 					else
 					{
-						httpContext.Response.Headers["X-UserId"] = $"{ecnrptUserId}";
+						httpContext.Response.Headers["X-UserId"] = $"{encryptedUserId}";
 					}
 
 					if (httpContext.Response.Headers.ContainsKey("Authorization") == false)
@@ -197,15 +177,9 @@ namespace FrogTailGameServer.MiddleWare
 						httpContext.Response.Headers["Authorization"] = $"Bearer {userSession.userToken}";
 					}
 
-
-
 					return Task.CompletedTask;
 				}, context);
 			}
-			
-			
-
-
 		}
 	}
 }

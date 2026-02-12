@@ -1,17 +1,6 @@
-﻿
-using DataBase;
-using DataBase.AccountDB;
-using DataBase.GameDB;
-using Microsoft.EntityFrameworkCore;
+﻿using DataBase.AccountDB;
 using Dapper;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.Common;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace DB.Data.Logic.AccountDBLogic
 {
@@ -19,9 +8,9 @@ namespace DB.Data.Logic.AccountDBLogic
 	{
 		public static async Task<Account> GetAccountInfo(DbConnection accountConnection, long accountId)
 		{
-			var query = $"SELECT * FROM account WHERE accountId = {accountId} ";
+			var query = "SELECT * FROM account WHERE accountId = @AccountId";
 
-			var result = await accountConnection.QueryFirstOrDefaultAsync<Account>(query);
+			var result = await accountConnection.QueryFirstOrDefaultAsync<Account>(query, new { AccountId = accountId });
 			return result;
 		}
 		/// <summary>

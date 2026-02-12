@@ -1,18 +1,10 @@
-using FrogTailGameServer.ControllerLogic;
 using GameServer.GameTable;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Newtonsoft.Json.Converters;
-using System.Net;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Hosting;
 using FrogTailGameServer.MiddleWare;
 using Common.Redis;
-using Microsoft.EntityFrameworkCore.Internal;
+using FrogTailGameServer.MiddleWare.Secret;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System.Configuration;
 using Common.Http;
 using DataBase.AccountDB;
 using DataBase.GameDB;
@@ -20,25 +12,28 @@ using DB;
 using GameServer.Logic.Utils;
 using FrogTailGameServer.Logic.Utils;
 using FrogTailGameServer.Swagger;
+using FrogTailGameServer.Services;
 using Serilog;
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // Add services to the container.
+    // Kestrel
     builder.WebHost.ConfigureKestrel(serverOptions =>
     {
-        // Set properties and call methods on options
         serverOptions.ListenAnyIP(9000);
     }).UseKestrel();
 
     builder.Services.AddHttpContextAccessor();
 
-    builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-    builder.Services.AddSingleton<PacketHandler>();
+    // Services
     builder.Services.AddSingleton<RedisClient>();
+    builder.Services.AddSingleton<DataBaseManager>();
+    builder.Services.AddScoped<AuthService>();
+    builder.Services.AddScoped<ShopService>();
 
+    // Database
     var gameDBconnection = builder.Configuration.GetConnectionString("GameDbConnection");
     builder.Services.AddDbContextFactory<GameDBContext>(option =>
     {
@@ -51,16 +46,9 @@ try
         option.UseMySQL(accountDBconnection);
     }, ServiceLifetime.Singleton);
 
-    builder.Services.AddSingleton<DataBaseManager>();
-	
-
-
 	builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
 
     builder.Services.AddDistributedMemoryCache();
-
-
 
     builder.Services.AddControllers().AddJsonOptions(options =>
     {
@@ -70,15 +58,13 @@ try
 
 	builder.Services.AddSwaggerGen(c =>
 	{
-		c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Local Test", Version = "v1" });
-
-		// 커스텀 Header 필터 등록
+		c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "FrogTail Game Server", Version = "v1" });
 		c.OperationFilter<AddCustomHeaders>();
 	});
 
 	Log.Logger = new LoggerConfiguration()
-	.ReadFrom.Configuration(builder.Configuration) 
-	.WriteTo.Console()                             
+	.ReadFrom.Configuration(builder.Configuration)
+	.WriteTo.Console()
 	.WriteTo.File(
         path: "Logs/log-{Date}.txt",
 	    rollingInterval: RollingInterval.Day,
@@ -90,14 +76,14 @@ try
 
 	var app = builder.Build();
 
-    // Configure the HTTP request pipeline.
+    // Swagger (Development only)
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
         app.UseSwaggerUI();
     }
 
-    //CustomService Start
+    // Service validation
     var redisClient = app.Services.GetService<RedisClient>();
     if (redisClient == null || redisClient.IsConnect() == false)
     {
@@ -110,25 +96,25 @@ try
         throw new Exception("DataManager Init Error");
     }
 
-    var packetHandler = app.Services.GetService<PacketHandler>();
-    if(packetHandler == null)
-    {
-        throw new Exception("Packet Handler Error");
-    }
-
+    // Firebase
 	var firebaseSection = app.Configuration.GetSection("FirebaseConfig");
 	var firebaseDict = firebaseSection.GetChildren()
 		.ToDictionary(x => x.Key, x => x.Value);
 	var fireBasejson = Newtonsoft.Json.JsonConvert.SerializeObject(firebaseDict);
 	FireBase.InitFireBase(fireBasejson);
 
-
-	packetHandler.InitPacketHandler();
     UniqueKey.LoadUniqueKey(1);
 
+    // Security
+	var encryptionKey = app.Configuration.GetSection("Security")["EncryptionKey"];
+	if (string.IsNullOrEmpty(encryptionKey))
+	{
+		throw new Exception("Security:EncryptionKey is not configured in appsettings.json");
+	}
+	SecretManager.Initialize(encryptionKey);
 
+    // Middleware
 	app.UseMiddleware<CustomMiddleWare>();
-
 
     app.UseAuthentication();
     app.UseAuthorization();
@@ -137,16 +123,22 @@ try
 
     if(HttpManager.GetInstance() == null)
     {
-        throw new Exception("Not Init HttpManager Instace");
+        throw new Exception("Not Init HttpManager Instance");
     }
 
-    //if(StoveClient.GetInstnace() == null)
-    //{
-    //    throw new Exception("Not Init Stove Instace");
-    //}
-   
-    app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-
+    // CORS
+    var allowedOrigins = app.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+    app.UseCors(x =>
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+        else
+        {
+            x.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+        }
+    });
 
     app.MapControllers();
 
@@ -156,4 +148,3 @@ catch(Exception ex)
 {
 	throw new Exception("Application Error :" , ex);
 }
-

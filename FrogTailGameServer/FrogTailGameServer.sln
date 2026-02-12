@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "..\Common\Common.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DB.Data", "..\Data\DB.Data.csproj", "{9B48A965-0AB6-49DF-BB14-7A7070B3A23E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketServer", "..\SocketServer\SocketServer.csproj", "{9763C47E-B242-4D6B-932C-667D62CE6DE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{9B48A965-0AB6-49DF-BB14-7A7070B3A23E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B48A965-0AB6-49DF-BB14-7A7070B3A23E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B48A965-0AB6-49DF-BB14-7A7070B3A23E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9763C47E-B242-4D6B-932C-667D62CE6DE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9763C47E-B242-4D6B-932C-667D62CE6DE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9763C47E-B242-4D6B-932C-667D62CE6DE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9763C47E-B242-4D6B-932C-667D62CE6DE2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
