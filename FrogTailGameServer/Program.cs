@@ -32,7 +32,6 @@ try
     builder.Services.AddSingleton<DataBaseManager>();
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<ShopService>();
-
     // Database
     var gameDBconnection = builder.Configuration.GetConnectionString("GameDbConnection");
     builder.Services.AddDbContextFactory<GameDBContext>(option =>
