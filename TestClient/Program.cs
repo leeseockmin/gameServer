@@ -26,24 +26,24 @@ class Program
 
     private static async Task RunLoginTestAsync(GrpcChannel channel)
     {
-        var authClient = new AuthService.AuthServiceClient(channel);
+        var authClient = new LoginService.LoginServiceClient(channel);
 
-        Console.WriteLine("\n[TestClient] === VerifyLogin 테스트 ===");
+        Console.WriteLine("\n[TestClient] === VerityLogin 테스트 ===");
         try
         {
-            var verifyRequest = new VerifyLoginRequest
+            var verifyRequest = new VerityLoginRequest
             {
                 OsType = OsType.Aos,
                 LoginType = LoginType.Guest,
                 AccessToken = "guest-token-for-test"
             };
 
-            var verifyResponse = await authClient.VerifyLoginAsync(verifyRequest);
-            Console.WriteLine($"[VerifyLogin] ErrorCode: {verifyResponse.ErrorCode}");
+            var verifyResponse = await authClient.VerityLoginAsync(verifyRequest);
+            Console.WriteLine($"[VerityLogin] ErrorCode: {verifyResponse.ErrorCode}");
         }
         catch (RpcException ex)
         {
-            Console.WriteLine($"[VerifyLogin] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+            Console.WriteLine($"[VerityLogin] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
         }
 
         Console.WriteLine("\n[TestClient] === Login 테스트 ===");
@@ -82,7 +82,7 @@ class Program
     /// </summary>
     private static async Task RunGuestLoginTestAsync(GrpcChannel channel)
     {
-        var authClient = new AuthService.AuthServiceClient(channel);
+        var authClient = new LoginService.LoginServiceClient(channel);
 
         Console.WriteLine("\n[TestClient] === Guest 신규 로그인 테스트 ===");
         Console.WriteLine("[TestClient] AccessToken = \"\" (빈 값) → 서버에서 GuestToken 발급 기대");
@@ -181,8 +181,8 @@ class Program
 
         try
         {
-            var shopResponse = await shopClient.GetShopListAsync(
-                new GetShopListRequest(),
+            var shopResponse = await shopClient.ShopListAsync(
+                new ShopListRequest(),
                 headers);
 
             Console.WriteLine($"[GetShopList] ErrorCode: {shopResponse.ErrorCode}");

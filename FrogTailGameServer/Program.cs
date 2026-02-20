@@ -47,6 +47,7 @@ try
         option.UseMySQL(accountDBconnection);
     }, ServiceLifetime.Singleton);
 
+    builder.Services.AddSingleton<GameTableManager>();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddDistributedMemoryCache();
 
@@ -93,7 +94,7 @@ try
     UniqueKey.LoadUniqueKey(1);
 
     // GameTable
-    var gameTableManager = new GameTableManager();
+    var gameTableManager = app.Services.GetRequiredService<GameTableManager>();
     gameTableManager.Init("GameJson");
 
     app.UseAuthentication();
@@ -101,6 +102,7 @@ try
 
     // gRPC 서비스 등록
     app.MapGrpcService<GrpcAuthService>();
+    app.MapGrpcService<GrpcShopService>();
 
     app.Run();
 }
