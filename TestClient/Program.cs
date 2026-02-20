@@ -1,126 +1,201 @@
-﻿using Newtonsoft.Json;
-using ProtoBuf;
-using System;
-using System.Net.Http;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using FrogTailGameServer.Grpc;
+using Grpc.Core;
+using Grpc.Net.Client;
 
 class Program
 {
-	public enum ErrrorCode
-	{
-		NONE = 0,
-		SUCCESS = 1,
-		INVAILD_PACKET_INFO = 2,
-	}
-	public class PacketReqeustBase
-	{
-		public PacketReqeustBase(PacketId packetId)
-		{
-			RequestId = packetId;
-			PacketBody = String.Empty;
-		}
-		public PacketId RequestId;
-		public string PacketBody;
-	}
-	public class PacketAnsPacket
-	{
-		public PacketAnsPacket()
-		{
+    // 서버 gRPC 주소 (h2c: HTTP/2 without TLS)
+    private const string ServerAddress = "http://localhost:9001";
 
-		}
-		public ErrrorCode ErrorCode;
-	}
-	public enum PacketId
-	{
-		None = 0,
-		CG_Login_Req_Packet_Id = 1,
-		GC_Login_Ans_Packet_Id = 2,
+    static async Task Main(string[] args)
+    {
+        Console.WriteLine("[TestClient] FrogTailGameServer gRPC TestClient 시작");
 
-	}
+        using var channel = GrpcChannel.ForAddress(ServerAddress, new GrpcChannelOptions
+        {
+            // h2c (TLS 없는 HTTP/2) 허용
+            HttpHandler = new SocketsHttpHandler
+            {
+                EnableMultipleHttp2Connections = true
+            }
+        });
 
-	public class CGLoginReqPacket : PacketReqeustBase
-	{
-		public CGLoginReqPacket() : base(PacketId.CG_Login_Req_Packet_Id)
-		{
+        await RunLoginTestAsync(channel);
+        await RunGuestLoginTestAsync(channel);
+    }
 
-		}
-		public string UserToken { get; set; }
-	}
-	public class GCLoginAnsPacket : PacketAnsPacket
-	{
-		public GCLoginAnsPacket() 
-		{
+    private static async Task RunLoginTestAsync(GrpcChannel channel)
+    {
+        var authClient = new AuthService.AuthServiceClient(channel);
 
-		}
-		public long UserId { get; set; }
-	}
+        Console.WriteLine("\n[TestClient] === VerifyLogin 테스트 ===");
+        try
+        {
+            var verifyRequest = new VerifyLoginRequest
+            {
+                OsType = OsType.Aos,
+                LoginType = LoginType.Guest,
+                AccessToken = "guest-token-for-test"
+            };
 
-	private static readonly HttpClient httpClient = new HttpClient();
+            var verifyResponse = await authClient.VerifyLoginAsync(verifyRequest);
+            Console.WriteLine($"[VerifyLogin] ErrorCode: {verifyResponse.ErrorCode}");
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"[VerifyLogin] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+        }
 
-	static async Task Main(string[] args)
-	{
-		try
-		{
-			CGLoginReqPacket request = new CGLoginReqPacket();
-			request.UserToken = "hello";
-			await SendPostRequestAsync(request);
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Error: {ex.Message}");
-		}
-	}
-	public static string authHeader = "";
+        Console.WriteLine("\n[TestClient] === Login 테스트 ===");
+        try
+        {
+            var loginRequest = new LoginRequest
+            {
+                DeviceId = "test-device-001",
+                NickName = "TestUser",
+                OsType = OsType.Windows,
+                LoginType = LoginType.Guest,
+                AccessToken = "guest-token-for-test"
+            };
 
-	private static async Task SendPostRequestAsync(PacketReqeustBase packet)
-	{
-		string url = "http://119.69.50.205:9000/Packet";
-		HttpClient httpClient = new HttpClient();
-		while (true)
-		{
-			PacketReqeustBase sendPacket = packet;
-			sendPacket.PacketBody = JsonConvert.SerializeObject(packet);
+            var loginResponse = await authClient.LoginAsync(loginRequest);
+            Console.WriteLine($"[Login] ErrorCode: {loginResponse.ErrorCode}");
+            Console.WriteLine($"[Login] UserId:    {loginResponse.UserId}");
+            Console.WriteLine($"[Login] UserToken: {loginResponse.UserToken}");
 
+            if (loginResponse.ErrorCode == ErrorCode.Success)
+            {
+                Console.WriteLine("\n[TestClient] === GetShopList 테스트 (인증 헤더 포함) ===");
+                await RunGetShopListTestAsync(channel, loginResponse.UserId.ToString(), loginResponse.UserToken);
+            }
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"[Login] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+        }
+    }
 
-			var json = JsonConvert.SerializeObject(sendPacket);
+    /// <summary>
+    /// Guest 로그인 시나리오:
+    ///   1. 신규: AccessToken 빈 값 → 서버가 GuestToken 발급, UserId > 0 확인
+    ///   2. 재로그인: 시나리오1에서 받은 GuestToken으로 재로그인 → 동일 UserId 반환 확인
+    /// </summary>
+    private static async Task RunGuestLoginTestAsync(GrpcChannel channel)
+    {
+        var authClient = new AuthService.AuthServiceClient(channel);
 
-			// HTTP 요청 설정
-			var content = new StringContent(json, Encoding.UTF8, "application/json");
-			if(string.IsNullOrEmpty(authHeader) == false)
-			{
-				
-			}
-			httpClient.DefaultRequestHeaders.Add("Authorization", "456465465");
+        Console.WriteLine("\n[TestClient] === Guest 신규 로그인 테스트 ===");
+        Console.WriteLine("[TestClient] AccessToken = \"\" (빈 값) → 서버에서 GuestToken 발급 기대");
 
-			// HTTP POST 요청 보내기
-			var response = httpClient.PostAsync(url, content).Result;
+        string guestToken = string.Empty;
+        long firstUserId = 0;
 
-			if (response.IsSuccessStatusCode)
-			{
-				// 응답 처리
-				string responseJson = response.Content.ReadAsStringAsync().Result;
-				IEnumerable<string> test = null;
-				response.Headers.TryGetValues("Authorization", out test);
-				if(test == null || test.Count() <= 0)
-				{
-					// 여기서 재로그인 태우거나 해야될듯
-					return;
-				}
+        try
+        {
+            var newGuestRequest = new LoginRequest
+            {
+                DeviceId  = "guest-device-new",
+                NickName  = "GuestUser",
+                OsType    = OsType.Windows,
+                LoginType = LoginType.Guest,
+                AccessToken = ""   // 신규: 빈 값
+            };
 
-				authHeader = test.FirstOrDefault();
+            var newGuestResponse = await authClient.LoginAsync(newGuestRequest);
+            Console.WriteLine($"[Guest 신규] ErrorCode: {newGuestResponse.ErrorCode}");
+            Console.WriteLine($"[Guest 신규] UserId:    {newGuestResponse.UserId}");
+            Console.WriteLine($"[Guest 신규] UserToken: {newGuestResponse.UserToken}");
+            Console.WriteLine($"[Guest 신규] GuestToken: {newGuestResponse.GuestToken}");
 
+            if (newGuestResponse.ErrorCode == ErrorCode.Success)
+            {
+                bool guestTokenOk = !string.IsNullOrEmpty(newGuestResponse.GuestToken);
+                bool userIdOk     = newGuestResponse.UserId > 0;
 
-				Console.WriteLine($"Received Data: {responseJson}");
-			}
-			else
-			{
-				Console.WriteLine($"Error: {response.StatusCode}");
-			}
-		}
-		
-	}
+                Console.WriteLine($"[Guest 신규] PASS - GuestToken 발급 여부: {guestTokenOk}, UserId > 0: {userIdOk}");
+
+                guestToken  = newGuestResponse.GuestToken;
+                firstUserId = newGuestResponse.UserId;
+            }
+            else
+            {
+                Console.WriteLine("[Guest 신규] FAIL - ErrorCode가 Success가 아님");
+                return;
+            }
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"[Guest 신규] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+            return;
+        }
+
+        Console.WriteLine("\n[TestClient] === Guest 재로그인 테스트 ===");
+        Console.WriteLine($"[TestClient] AccessToken = \"{guestToken}\" (시나리오1에서 받은 GuestToken)");
+        Console.WriteLine("[TestClient] 기대: 시나리오1과 동일한 UserId 반환");
+
+        try
+        {
+            var reLoginRequest = new LoginRequest
+            {
+                DeviceId  = "guest-device-new",
+                NickName  = "GuestUser",
+                OsType    = OsType.Windows,
+                LoginType = LoginType.Guest,
+                AccessToken = guestToken   // 재로그인: 발급받은 GuestToken 사용
+            };
+
+            var reLoginResponse = await authClient.LoginAsync(reLoginRequest);
+            Console.WriteLine($"[Guest 재로그인] ErrorCode: {reLoginResponse.ErrorCode}");
+            Console.WriteLine($"[Guest 재로그인] UserId:    {reLoginResponse.UserId}");
+            Console.WriteLine($"[Guest 재로그인] UserToken: {reLoginResponse.UserToken}");
+            Console.WriteLine($"[Guest 재로그인] GuestToken: {reLoginResponse.GuestToken} (재로그인은 빈 값이어야 함)");
+
+            if (reLoginResponse.ErrorCode == ErrorCode.Success)
+            {
+                bool sameUserId      = reLoginResponse.UserId == firstUserId;
+                bool noGuestToken    = string.IsNullOrEmpty(reLoginResponse.GuestToken);
+
+                Console.WriteLine($"[Guest 재로그인] PASS - 동일 UserId: {sameUserId} ({firstUserId} == {reLoginResponse.UserId}), GuestToken 미발급: {noGuestToken}");
+            }
+            else
+            {
+                Console.WriteLine("[Guest 재로그인] FAIL - ErrorCode가 Success가 아님");
+            }
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"[Guest 재로그인] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+        }
+    }
+
+    private static async Task RunGetShopListTestAsync(GrpcChannel channel, string userId, string userToken)
+    {
+        var shopClient = new ShopService.ShopServiceClient(channel);
+
+        // gRPC 메타데이터로 인증 헤더 전송 (AuthInterceptor에서 검증)
+        var headers = new Metadata
+        {
+            { "x-userid", userId },
+            { "authorization", $"Bearer {userToken}" }
+        };
+
+        try
+        {
+            var shopResponse = await shopClient.GetShopListAsync(
+                new GetShopListRequest(),
+                headers);
+
+            Console.WriteLine($"[GetShopList] ErrorCode: {shopResponse.ErrorCode}");
+            Console.WriteLine($"[GetShopList] ShopCount: {shopResponse.ShopDatas.Count}");
+
+            foreach (var shop in shopResponse.ShopDatas)
+            {
+                Console.WriteLine($"  Shop ID: {shop.ShopId}, Items: {shop.ShopItemDatas.Count}");
+            }
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"[GetShopList] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+        }
+    }
 }
