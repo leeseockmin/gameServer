@@ -1,37 +1,39 @@
 using GameServer.GameTable;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Hosting;
-using FrogTailGameServer.MiddleWare;
 using Common.Redis;
 using FrogTailGameServer.MiddleWare.Secret;
 using Microsoft.EntityFrameworkCore;
-using Common.Http;
 using DataBase.AccountDB;
 using DataBase.GameDB;
 using DB;
 using GameServer.Logic.Utils;
 using FrogTailGameServer.Logic.Utils;
-using FrogTailGameServer.Swagger;
-using FrogTailGameServer.Services;
+using FrogTailGameServer.GrpcServices;
 using Serilog;
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // Kestrel
+    // Kestrel — gRPC는 HTTP/2 필요
     builder.WebHost.ConfigureKestrel(serverOptions =>
     {
-        serverOptions.ListenAnyIP(9000);
+        serverOptions.ListenAnyIP(9001, o => o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
     }).UseKestrel();
+
+    // gRPC
+    builder.Services.AddGrpc(options =>
+    {
+        options.Interceptors.Add<AuthInterceptor>();
+    });
 
     builder.Services.AddHttpContextAccessor();
 
     // Services
     builder.Services.AddSingleton<RedisClient>();
     builder.Services.AddSingleton<DataBaseManager>();
-    builder.Services.AddScoped<AuthService>();
-    builder.Services.AddScoped<ShopService>();
+    builder.Services.AddSingleton<SecretManager>();
+
     // Database
     var gameDBconnection = builder.Configuration.GetConnectionString("GameDbConnection");
     builder.Services.AddDbContextFactory<GameDBContext>(option =>
@@ -39,14 +41,13 @@ try
         option.UseMySQL(gameDBconnection);
     }, ServiceLifetime.Singleton);
 
-	var accountDBconnection = builder.Configuration.GetConnectionString("AccountDbConnection");
-	builder.Services.AddDbContextFactory<AccountDBContext>(option =>
+    var accountDBconnection = builder.Configuration.GetConnectionString("AccountDbConnection");
+    builder.Services.AddDbContextFactory<AccountDBContext>(option =>
     {
         option.UseMySQL(accountDBconnection);
     }, ServiceLifetime.Singleton);
 
-	builder.Services.AddEndpointsApiExplorer();
-
+    builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddDistributedMemoryCache();
 
     builder.Services.AddControllers().AddJsonOptions(options =>
@@ -55,32 +56,19 @@ try
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-	builder.Services.AddSwaggerGen(c =>
-	{
-		c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "FrogTail Game Server", Version = "v1" });
-		c.OperationFilter<AddCustomHeaders>();
-	});
-
-	Log.Logger = new LoggerConfiguration()
-	.ReadFrom.Configuration(builder.Configuration)
-	.WriteTo.Console()
-	.WriteTo.File(
+    Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .WriteTo.Console()
+    .WriteTo.File(
         path: "Logs/log-{Date}.txt",
-	    rollingInterval: RollingInterval.Day,
-	    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-	)
-	.CreateLogger();
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+    )
+    .CreateLogger();
 
-	builder.Host.UseSerilog();
+    builder.Host.UseSerilog();
 
-	var app = builder.Build();
-
-    // Swagger (Development only)
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
+    var app = builder.Build();
 
     // Service validation
     var redisClient = app.Services.GetService<RedisClient>();
@@ -90,60 +78,33 @@ try
     }
 
     var getDataBaseManager = app.Services.GetService<DataBaseManager>();
-    if(getDataBaseManager == null)
+    if (getDataBaseManager == null)
     {
         throw new Exception("DataManager Init Error");
     }
 
     // Firebase
-	var firebaseSection = app.Configuration.GetSection("FirebaseConfig");
-	var firebaseDict = firebaseSection.GetChildren()
-		.ToDictionary(x => x.Key, x => x.Value);
-	var fireBasejson = Newtonsoft.Json.JsonConvert.SerializeObject(firebaseDict);
-	FireBase.InitFireBase(fireBasejson);
+    var firebaseSection = app.Configuration.GetSection("FirebaseConfig");
+    var firebaseDict = firebaseSection.GetChildren()
+        .ToDictionary(x => x.Key, x => x.Value);
+    var fireBasejson = Newtonsoft.Json.JsonConvert.SerializeObject(firebaseDict);
+    FireBase.InitFireBase(fireBasejson);
 
     UniqueKey.LoadUniqueKey(1);
 
-    // Security
-	var encryptionKey = app.Configuration.GetSection("Security")["EncryptionKey"];
-	if (string.IsNullOrEmpty(encryptionKey))
-	{
-		throw new Exception("Security:EncryptionKey is not configured in appsettings.json");
-	}
-	SecretManager.Initialize(encryptionKey);
-
-    // Middleware
-	app.UseMiddleware<CustomMiddleWare>();
+    // GameTable
+    var gameTableManager = new GameTableManager();
+    gameTableManager.Init("GameJson");
 
     app.UseAuthentication();
     app.UseAuthorization();
 
-    GameTableManager.GetInstance().Init("GameJson");
-
-    if(HttpManager.GetInstance() == null)
-    {
-        throw new Exception("Not Init HttpManager Instance");
-    }
-
-    // CORS
-    var allowedOrigins = app.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-    app.UseCors(x =>
-    {
-        if (app.Environment.IsDevelopment())
-        {
-            x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        }
-        else
-        {
-            x.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
-        }
-    });
-
-    app.MapControllers();
+    // gRPC 서비스 등록
+    app.MapGrpcService<GrpcAuthService>();
 
     app.Run();
 }
-catch(Exception ex)
+catch (Exception ex)
 {
-	throw new Exception("Application Error :" , ex);
+    throw new Exception("Application Error :", ex);
 }

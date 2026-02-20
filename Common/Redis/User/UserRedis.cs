@@ -21,7 +21,7 @@ namespace Common.Redis
 			var getUserSession = await HashGet<UserSession>(getKey, RedisHahField.SessionFieldKey);
 			return getUserSession;
 		}
-		public async Task SetUserSession(RedisClient.UserSession userSession)
+		public virtual async Task SetUserSession(RedisClient.UserSession userSession)
 		{
 			var getKey = string.Format(RedisKey.UserKey, userSession.userId);
 			await HashSet<UserSession>(getKey, RedisHahField.SessionFieldKey, userSession);

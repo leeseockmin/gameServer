@@ -100,7 +100,7 @@ namespace DB
         }
 
 
-		public async Task DBContextExcuteTransaction(DBtype dbtype, Func<DbConnection, Task<bool>> func)
+		public virtual async Task DBContextExcuteTransaction(DBtype dbtype, Func<DbConnection, Task<bool>> func)
 		{
 			using (var context = await GetDBContext(dbtype))
 			{
@@ -126,7 +126,7 @@ namespace DB
 
 			}
 		}
-		public async Task DBContextExcuteTransaction(DBtype dbtype1,DBtype dbtype2,Func<DbConnection, DbConnection, Task<bool>> func)
+		public virtual async Task DBContextExcuteTransaction(DBtype dbtype1,DBtype dbtype2,Func<DbConnection, DbConnection, Task<bool>> func)
 		{
 			
 			// TransactionScope로 두 DB 동시 트랜잭션
