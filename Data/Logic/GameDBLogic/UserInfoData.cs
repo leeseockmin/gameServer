@@ -1,4 +1,4 @@
-﻿using DataBase.GameDB;
+using DataBase.GameDB;
 using Dapper;
 using System.Data.Common;
 
@@ -8,9 +8,23 @@ namespace DB.Data.Logic.GameDBLogic
 	{
 		public static async Task<UserInfo> GetUserInfoByAccountId(DbConnection gameConnection, long accountId)
 		{
-			var query = "SELECT * FROM userInfo WHERE accountId = @AccountId";
+			var query = @"
+SELECT userId, nickName, accountId
+FROM userInfo
+WHERE accountId = @AccountId";
 
 			var result = await gameConnection.QueryFirstOrDefaultAsync<UserInfo>(query, new { AccountId = accountId });
+			return result;
+		}
+
+		public static async Task<UserInfo?> GetUserInfoByUserId(DbConnection gameConnection, long userId)
+		{
+			var query = @"
+SELECT userId, nickName, accountId
+FROM userInfo
+WHERE userId = @UserId";
+
+			var result = await gameConnection.QueryFirstOrDefaultAsync<UserInfo>(query, new { UserId = userId }).ConfigureAwait(false);
 			return result;
 		}
 

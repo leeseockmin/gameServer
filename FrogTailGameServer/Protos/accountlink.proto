@@ -1,0 +1,43 @@
+syntax = "proto3";
+import "Protos/common.proto";
+option csharp_namespace = "FrogTailGameServer.Grpc";
+package accountlink;
+
+message AccountLinkInfoProto {
+  int64     link_id     = 1;
+  LoginType login_type  = 2;
+  string    create_date = 3;
+}
+
+message AccountLinkAddRequest {
+  LoginType link_login_type = 1;
+  string    access_token    = 2;
+}
+
+message AccountLinkAddResponse {
+  ErrorCode                    error_code      = 1;
+  repeated AccountLinkInfoProto linked_accounts = 2;
+}
+
+message AccountLinkRemoveRequest {
+  int64 link_id = 1;
+}
+
+message AccountLinkRemoveResponse {
+  ErrorCode                    error_code      = 1;
+  repeated AccountLinkInfoProto linked_accounts = 2;
+}
+
+message AccountLinkListRequest {
+}
+
+message AccountLinkListResponse {
+  ErrorCode                    error_code      = 1;
+  repeated AccountLinkInfoProto linked_accounts = 2;
+}
+
+service AccountLinkService {
+  rpc AccountLinkAdd    (AccountLinkAddRequest)    returns (AccountLinkAddResponse);
+  rpc AccountLinkRemove (AccountLinkRemoveRequest) returns (AccountLinkRemoveResponse);
+  rpc AccountLinkList   (AccountLinkListRequest)   returns (AccountLinkListResponse);
+}

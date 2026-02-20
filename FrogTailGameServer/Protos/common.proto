@@ -1,0 +1,41 @@
+syntax = "proto3";
+option csharp_namespace = "FrogTailGameServer.Grpc";
+
+enum ErrorCode {
+  NONE = 0;
+  SUCCESS = 1;
+  CREATE_USER = 2;
+  UNKNOW_ERROR = 3;
+  INVALID_PACKET_INFO = 4;
+  INVALID_USER_TOKEN = 5;
+  INVALID_NICK_NAME = 6;
+  ALREADY_IN_MATCH_QUEUE = 7;
+  NOT_IN_MATCH_QUEUE = 8;
+  ALREADY_IN_GAME = 9;
+  ROOM_NOT_FOUND = 10;
+  NOT_IN_ROOM = 11;
+  GAME_NOT_STARTED = 12;
+  GAME_ALREADY_ENDED = 13;
+  ACCOUNT_LINK_ALREADY_LINKED   = 14;
+  ACCOUNT_LINK_INVALID_KEY      = 15;
+  ACCOUNT_LINK_NOT_FOUND        = 16;
+  ACCOUNT_LINK_LAST_LINK        = 17;
+  ACCOUNT_LINK_UNSUPPORTED_TYPE = 18;
+}
+
+enum LoginType {
+  LOGIN_NONE = 0;
+  GUEST = 1;
+  GOOGLE = 2;
+  KA_KAO = 3;
+  STOVE = 4;
+  APPLE = 5;
+  EMAIL = 6;
+}
+
+enum OsType {
+  OS_NONE = 0;
+  IOS = 1;
+  AOS = 2;
+  WINDOWS = 3;
+}
