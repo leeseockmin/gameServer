@@ -40,10 +40,6 @@ namespace FrogTailGameServer.Tests
         private readonly Mock<RedisClient>      _redisMock;
         private readonly Mock<ILogger<GrpcAuthService>> _loggerMock;
 
-        // DB 조회 결과를 테스트별로 제어하기 위한 필드
-        private AccountLink? _existingAccountLink = null;
-        private Account?     _existingAccount     = null;
-
         private const long FakeAccountId = 100L;
         private const long FakeUserId    = 200L;
         private const string FakeUserToken = "fake-user-token";
@@ -91,19 +87,10 @@ namespace FrogTailGameServer.Tests
         /// </summary>
         private void SetupDbManagerMock()
         {
-            int callOrder = 0;
-
             _dbManagerMock
                 .Setup(m => m.DBContextExcuteTransaction(
                     It.IsAny<DataBaseManager.DBtype>(),
                     It.IsAny<Func<DbConnection, Task<bool>>>()))
-                .Callback<DataBaseManager.DBtype, Func<DbConnection, Task<bool>>>((dbtype, func) =>
-                {
-                    if (dbtype == DataBaseManager.DBtype.Account)
-                        _capturedAccountFunc = func;
-                    else if (dbtype == DataBaseManager.DBtype.Game)
-                        _capturedGameFunc = func;
-                })
                 .Returns(Task.CompletedTask);
         }
 
@@ -343,8 +330,6 @@ namespace FrogTailGameServer.Tests
                 LoginType   = global::FrogTailGameServer.Grpc.LoginType.Guest,
                 AccessToken = ""
             };
-
-            string? capturedAccessToken = null;
 
             // Account 트랜잭션 mock: func 실행하지 않고 accountId를 0으로 둠
             // (실제 DB 없이 토큰 생성 로직만 확인)
