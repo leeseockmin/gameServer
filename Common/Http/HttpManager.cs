@@ -1,14 +1,17 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.Text;
 
 namespace Common.Http
 {
+    /// <summary>
+    /// HTTP 요청을 처리하는 매니저 클래스.
+    /// DI 컨테이너에 Singleton으로 등록하여 사용합니다.
+    /// </summary>
     public class HttpManager
     {
-        private static HttpManager Instance;
         private static readonly HttpClient _httpClient = new HttpClient();
 
-        public async Task<T> ExcuteHttp<T, K>(string url, K requestData, Dictionary<string, string> headers = null) where T : class
+        public async Task<T> ExecuteHttp<T, K>(string url, K requestData, Dictionary<string, string> headers = null) where T : class
                                              where K : class
         {
             var json = JsonConvert.SerializeObject(requestData);
@@ -39,18 +42,9 @@ namespace Common.Http
             }
             catch (Exception ex)
             {
-                Serilog.Log.Error(ex, "[HttpManager] ExcuteHttp failed for {Url}", url);
+                Serilog.Log.Error(ex, "[HttpManager] ExecuteHttp failed for {Url}", url);
                 return null;
             }
-        }
-
-        public static HttpManager GetInstance()
-        {
-            if(Instance == null)
-            {
-                Instance = new HttpManager();
-            }
-            return Instance;
         }
     }
 }

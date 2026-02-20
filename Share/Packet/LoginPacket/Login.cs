@@ -1,4 +1,4 @@
-﻿using Share.Common;
+using Share.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Share.Packet
 {
-	public class CGLoginReqPacket : PacketReqeustBase
+	public class CGLoginReqPacket : PacketRequestBase
 	{
 		public CGLoginReqPacket() : base(PacketId.CG_Login_Req_Packet_Id)
 		{
@@ -21,16 +21,16 @@ namespace Share.Packet
 	}
 	public class GCLoginAnsPacket : PacketAnsPacket
 	{
-		public GCLoginAnsPacket() 
+		public GCLoginAnsPacket()
 		{
-			ErrorCode = Common.ErrrorCode.SUCCESS;
+			ErrorCode = Share.Common.ErrorCode.SUCCESS;
 		}
 		public string UserToken { get; set; }
 		public long UserId { get; set; }
 	}
 
 
-	public class CGVerityLoginReqPacket : PacketReqeustBase
+	public class CGVerityLoginReqPacket : PacketRequestBase
 	{
 
 		public CGVerityLoginReqPacket() : base(PacketId.CG_VerityLogin_Req_Packet_Id)
@@ -46,7 +46,7 @@ namespace Share.Packet
 	{
 		public GCVerityLoginAnsPacket()
 		{
-			ErrorCode = Common.ErrrorCode.SUCCESS;
+			ErrorCode = Share.Common.ErrorCode.SUCCESS;
 		}
 	}
 

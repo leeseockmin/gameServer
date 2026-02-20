@@ -1,0 +1,26 @@
+syntax = "proto3";
+import "Protos/common.proto";
+option csharp_namespace = "FrogTailGameServer.Grpc";
+package shop;
+
+message ShopData {
+  int32 shop_id = 1;
+  repeated ShopItemData shop_item_datas = 2;
+}
+
+message ShopItemData {
+  int32 shop_item_id = 1;
+  int64 buy_count = 2;
+}
+
+message ShopListRequest {
+}
+
+message ShopListResponse {
+  ErrorCode error_code = 1;
+  repeated ShopData shop_datas = 2;
+}
+
+service ShopService {
+  rpc ShopList (ShopListRequest) returns (ShopListResponse);
+}

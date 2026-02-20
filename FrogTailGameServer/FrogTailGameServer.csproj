@@ -4,16 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	<NoWarn>$(NoWarn);CS8600</NoWarn>
-	<NoWarn>$(NoWarn);CS8604;CS8603;CS8618;CSE8625;CS8602;</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningLevel>0</WarningLevel>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <WarningLevel>0</WarningLevel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,28 +14,48 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- gRPC -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.63.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.3" />
+    <PackageReference Include="Grpc.Tools" Version="2.63.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- DB -->
     <PackageReference Include="Dapper" Version="2.1.35" />
-    <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="MySql.EntityFrameworkCore" Version="8.0.2" />
+
+    <!-- Auth -->
+    <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+
+    <!-- Config / Utils -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+
+    <!-- Cache -->
+    <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
+
+    <!-- Logging -->
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Data\DB.Data.csproj" />
     <ProjectReference Include="..\Share\Share.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Protos 폴더의 .proto 파일을 전부 자동 포함 (새 파일 추가 시 별도 등록 불필요) -->
+    <Protobuf Include="Protos\*.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>

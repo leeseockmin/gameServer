@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PacketToProtoGenerator</AssemblyName>
+    <RootNamespace>PacketToProtoGenerator</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- C# 코드 파싱용 Roslyn -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,9 +8,33 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="protobuf-net" Version="3.2.30" />
+    <!-- gRPC Client -->
+    <PackageReference Include="Grpc.Net.Client" Version="2.63.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.3" />
+    <PackageReference Include="Grpc.Tools" Version="2.63.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      서버 Protos 폴더를 ProtoRoot로 지정하여 import 경로를 맞춤.
+      auth.proto / shop.proto 모두 "Protos/common.proto" 를 import하므로
+      ProtoRoot를 서버 프로젝트 루트로 설정합니다.
+    -->
+    <Protobuf Include="..\FrogTailGameServer\Protos\common.proto"
+              GrpcServices="Client"
+              Link="Protos\common.proto"
+              ProtoRoot="..\FrogTailGameServer" />
+    <Protobuf Include="..\FrogTailGameServer\Protos\auth.proto"
+              GrpcServices="Client"
+              Link="Protos\auth.proto"
+              ProtoRoot="..\FrogTailGameServer" />
+    <Protobuf Include="..\FrogTailGameServer\Protos\shop.proto"
+              GrpcServices="Client"
+              Link="Protos\shop.proto"
+              ProtoRoot="..\FrogTailGameServer" />
   </ItemGroup>
 
 </Project>

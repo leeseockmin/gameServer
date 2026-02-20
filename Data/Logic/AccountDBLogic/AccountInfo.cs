@@ -1,4 +1,4 @@
-﻿using DataBase.AccountDB;
+using DataBase.AccountDB;
 using Dapper;
 using System.Data.Common;
 
@@ -8,13 +8,16 @@ namespace DB.Data.Logic.AccountDBLogic
 	{
 		public static async Task<Account> GetAccountInfo(DbConnection accountConnection, long accountId)
 		{
-			var query = "SELECT * FROM account WHERE accountId = @AccountId";
+			var query = @"
+SELECT accountId, deviceId, osType, loginType, createDate, updateDate, lastLoginTime
+FROM account
+WHERE accountId = @AccountId";
 
 			var result = await accountConnection.QueryFirstOrDefaultAsync<Account>(query, new { AccountId = accountId });
 			return result;
 		}
 		/// <summary>
-		/// 업데이트 나 Insert 구문은 인젝션 제거하기 위해서 
+		/// 업데이트 나 Insert 구문은 인젝션 제거하기 위해서
 		/// </summary>
 		/// <param name="accountConnection"></param>
 		/// <param name="accountInfo"></param>
@@ -42,7 +45,7 @@ namespace DB.Data.Logic.AccountDBLogic
 		{
 			var sql = @"
 			UPDATE account
-			SET 
+			SET
 				deviceId = @DeviceId,
 				osType = @OsType,
 				loginType = @LoginType,
