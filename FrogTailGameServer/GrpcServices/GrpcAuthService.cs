@@ -32,7 +32,7 @@ namespace FrogTailGameServer.GrpcServices
             var loginType = (LoginType)(int)request.LoginType;
             var accessToken = request.AccessToken;
 
-            if (string.IsNullOrEmpty(accessToken))
+            if (loginType != LoginType.Guest && string.IsNullOrEmpty(accessToken))
             {
                 _logger.LogError("[gRPC VerifyLogin] AccessToken is empty or null");
                 return new global::FrogTailGameServer.Grpc.VerityLoginResponse
@@ -152,7 +152,7 @@ namespace FrogTailGameServer.GrpcServices
             bool isCreate = false;
             long accountId = 0;
 
-            await _dataBaseManager.DBContextExecuteTransaction(DataBaseManager.DBtype.Account, async (accountDBConnection) =>
+            await _dataBaseManager.DBContextExcuteTransaction(DataBaseManager.DBtype.Account, async (accountDBConnection) =>
             {
                 var getAccountLinkInfo = await DB.Data.Logic.AccountDBLogic.AccountLinkInfo.GetAccountLinkInfo(
                     accountDBConnection, loginType, accessToken);
@@ -238,7 +238,7 @@ namespace FrogTailGameServer.GrpcServices
 
             long userId = 0;
 
-            await _dataBaseManager.DBContextExecuteTransaction(DataBaseManager.DBtype.Game, async (gameDBConnection) =>
+            await _dataBaseManager.DBContextExcuteTransaction(DataBaseManager.DBtype.Game, async (gameDBConnection) =>
             {
                 if (isCreate)
                 {

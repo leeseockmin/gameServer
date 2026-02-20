@@ -9,7 +9,7 @@ namespace DB.Data.Logic.AccountDBLogic
 	{
 		public static async Task<AccountLink> GetAccountLinkInfo(DbConnection accountConnection, LoginType loginType, string accessToken)
 		{
-			var query = "SELECT * FROM accountLink WHERE loginType = @LoginType AND accessToken = @AccessToken";
+			var query = "SELECT * FROM accountlink WHERE loginType = @LoginType AND accessToken = @AccessToken";
 
 			var result = await accountConnection.QueryFirstOrDefaultAsync<AccountLink>(query, new { LoginType = (int)loginType, AccessToken = accessToken });
 			return result;
@@ -17,7 +17,7 @@ namespace DB.Data.Logic.AccountDBLogic
 
 		public static async Task<List<AccountLink>> GetAccountLinkInfos(DbConnection accountConnection, long accountId)
 		{
-			var query = "SELECT * FROM accountLink WHERE accountId = @AccountId";
+			var query = "SELECT * FROM accountlink WHERE accountId = @AccountId";
 
 			var result = await accountConnection.QueryAsync<AccountLink>(query, new { AccountId = accountId });
 			return result.ToList();
@@ -26,7 +26,7 @@ namespace DB.Data.Logic.AccountDBLogic
 		public static async Task<int> InsertAccountLinkInfo(DbConnection accountConnection, AccountLink accountLink)
 		{
 			var sql = @"
-    INSERT INTO account_link (accessToken, loginType, accountId, createDate)
+    INSERT INTO accountlink (accessToken, loginType, accountId, createDate)
     VALUES (@AccessToken, @LoginType, @AccountId, @CreateDate);";
 
 			return await accountConnection.ExecuteAsync(sql, new

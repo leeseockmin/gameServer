@@ -40,18 +40,9 @@ namespace FrogTailGameServer.Tests
         private readonly Mock<RedisClient>      _redisMock;
         private readonly Mock<ILogger<GrpcAuthService>> _loggerMock;
 
-        // DB 콜백 캡처: Account DB 트랜잭션 func, Game DB 트랜잭션 func
-        private Func<DbConnection, Task<bool>>? _capturedAccountFunc;
-        private Func<DbConnection, Task<bool>>? _capturedGameFunc;
-
         // DB 조회 결과를 테스트별로 제어하기 위한 필드
         private AccountLink? _existingAccountLink = null;
         private Account?     _existingAccount     = null;
-
-        // DB Insert 결과 추적 (DB 검증 케이스에서 활용)
-        private Account?      _insertedAccount     = null;
-        private AccountLink?  _insertedAccountLink = null;
-        private UserInfo?     _insertedUserInfo    = null;
 
         private const long FakeAccountId = 100L;
         private const long FakeUserId    = 200L;
