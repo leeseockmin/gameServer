@@ -1,7 +1,5 @@
-﻿
 using DataBase.AccountDB;
 using DataBase.GameDB;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data.Common;
@@ -14,154 +12,134 @@ namespace DB
         public enum DBtype
         {
             NONE = 0,
-			Account = 1,
+            Account = 1,
             Game = 2,
         }
 
-        private IDbContextFactory<GameDBContext> _gameContextFactory;
-        private IDbContextFactory<AccountDBContext> _acountContextFactory;
-        ILogger<DataBaseManager> _logger;
-        public DataBaseManager(ILogger<DataBaseManager> logger, IDbContextFactory<AccountDBContext> acountContextFactory, IDbContextFactory<GameDBContext> gameContextFactory)
+        private readonly IDbContextFactory<GameDBContext> _gameContextFactory;
+        private readonly IDbContextFactory<AccountDBContext> _accountContextFactory;
+        private readonly ILogger<DataBaseManager> _logger;
+
+        public DataBaseManager(
+            ILogger<DataBaseManager> logger,
+            IDbContextFactory<AccountDBContext> accountContextFactory,
+            IDbContextFactory<GameDBContext> gameContextFactory)
         {
             _logger = logger;
             _gameContextFactory = gameContextFactory;
-            _acountContextFactory = acountContextFactory;
+            _accountContextFactory = accountContextFactory;
         }
 
         private async Task<DbContext> GetDBContext(DBtype dbtype)
         {
-            DbContext context = null;
-            switch (dbtype)
+            return dbtype switch
             {
-                case DBtype.Account:
-                    {
-                        context = await _acountContextFactory.CreateDbContextAsync();
-                    }
-                    break;
-                case DBtype.Game:
-                    {
-                        context = await _gameContextFactory.CreateDbContextAsync();
-                    }
-                    break;
-            }
-            return context;
+                DBtype.Account => await _accountContextFactory.CreateDbContextAsync(),
+                DBtype.Game    => await _gameContextFactory.CreateDbContextAsync(),
+                _ => throw new ArgumentOutOfRangeException(nameof(dbtype), $"Unsupported DBtype: {dbtype}")
+            };
         }
 
-
-        public async Task DBContextExcute(DBtype dbtype, Func<DbConnection, Task> func)
+        public async Task DBContextExecute(DBtype dbtype, Func<DbConnection, Task> func)
         {
-            using (var context = await GetDBContext(dbtype))
+            await using var context = await GetDBContext(dbtype);
+            try
             {
-                try
-                {
-                    await context.Database.OpenConnectionAsync();
-                    await func.Invoke(context.Database.GetDbConnection());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex.Message);
-                }
-                finally
-                {
-                    await context.Database.CloseConnectionAsync();
-                }
-
+                await context.Database.OpenConnectionAsync();
+                await func.Invoke(context.Database.GetDbConnection());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DBContextExecute Error");
+                throw;
+            }
+            finally
+            {
+                await context.Database.CloseConnectionAsync();
             }
         }
+
         /// <summary>
-        /// dyType 순서와 DB 갖고오는 값이 같아야됌.
+        /// dbtype 순서와 DB 갖고오는 값이 같아야 됩니다.
         /// </summary>
-        /// <param name="dbtype1"></param>
-        /// <param name="dbtype2"></param>
-        /// <param name="func"></param>
-        /// <returns></returns>
-        public async Task DBContextExcute(DBtype dbtype1, DBtype dbtype2, Func<DbConnection, DbConnection, Task> func)
+        public async Task DBContextExecute(DBtype dbtype1, DBtype dbtype2, Func<DbConnection, DbConnection, Task> func)
         {
-            using (var context1 = await GetDBContext(dbtype1))
-            using (var context2 = await GetDBContext(dbtype2))
+            await using var context1 = await GetDBContext(dbtype1);
+            await using var context2 = await GetDBContext(dbtype2);
+            try
             {
-                try
-                {
-                    await context1.Database.OpenConnectionAsync();
-                    await context2.Database.OpenConnectionAsync();
-                    await func.Invoke(context1.Database.GetDbConnection(), context2.Database.GetDbConnection());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex.Message);
-                }
-                finally
-                {
-                    await context1.Database.CloseConnectionAsync();
-                    await context2.Database.CloseConnectionAsync();
-                }
-
+                await context1.Database.OpenConnectionAsync();
+                await context2.Database.OpenConnectionAsync();
+                await func.Invoke(
+                    context1.Database.GetDbConnection(),
+                    context2.Database.GetDbConnection());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DBContextExecute Error");
+                throw;
+            }
+            finally
+            {
+                await context1.Database.CloseConnectionAsync();
+                await context2.Database.CloseConnectionAsync();
             }
         }
 
-
-		public async Task DBContextExcuteTransaction(DBtype dbtype, Func<DbConnection, Task<bool>> func)
-		{
-			using (var context = await GetDBContext(dbtype))
-			{
-				try
-				{
-
-					using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-					await context.Database.OpenConnectionAsync();
-					bool isSuccess = await func.Invoke(context.Database.GetDbConnection());
-                    if(isSuccess == true)
-                    {
-                        scope.Complete();
-                    }
-				}
-				catch (Exception ex)
-				{
-					_logger.LogError(ex.Message, "Transation Error");
-				}
-				finally
-				{
-					await context.Database.CloseConnectionAsync();
-				}
-
-			}
-		}
-		public async Task DBContextExcuteTransaction(DBtype dbtype1,DBtype dbtype2,Func<DbConnection, DbConnection, Task<bool>> func)
-		{
-			
-			// TransactionScope로 두 DB 동시 트랜잭션
-			
-			using (var context1 = await GetDBContext(dbtype1))
-			using (var context2 = await GetDBContext(dbtype2))
+        public async Task DBContextExecuteTransaction(DBtype dbtype, Func<DbConnection, Task<bool>> func)
+        {
+            await using var context = await GetDBContext(dbtype);
+            try
             {
-				try
-				{
-					using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                await context.Database.OpenConnectionAsync();
+                bool isSuccess = await func.Invoke(context.Database.GetDbConnection());
+                if (isSuccess)
+                {
+                    scope.Complete();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Transaction Error");
+                throw;
+            }
+            finally
+            {
+                await context.Database.CloseConnectionAsync();
+            }
+        }
 
-					await context1.Database.OpenConnectionAsync();
-					await context2.Database.OpenConnectionAsync();
+        public async Task DBContextExecuteTransaction(DBtype dbtype1, DBtype dbtype2, Func<DbConnection, DbConnection, Task<bool>> func)
+        {
+            await using var context1 = await GetDBContext(dbtype1);
+            await using var context2 = await GetDBContext(dbtype2);
+            try
+            {
+                using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-					bool isSuccess = await func.Invoke(context1.Database.GetDbConnection(), context2.Database.GetDbConnection());
-					if(isSuccess == true)
-                    {
-						scope.Complete();
-					}
-                    
-				}
-				catch (Exception ex)
-				{
-					_logger.LogError(ex, "Transaction Error");
-					throw;
-				}
-				finally
-				{
-					await context1.Database.CloseConnectionAsync();
-					await context2.Database.CloseConnectionAsync();
-				}
-			}
-			
-		}
+                await context1.Database.OpenConnectionAsync();
+                await context2.Database.OpenConnectionAsync();
 
+                bool isSuccess = await func.Invoke(
+                    context1.Database.GetDbConnection(),
+                    context2.Database.GetDbConnection());
 
-	}
+                if (isSuccess)
+                {
+                    scope.Complete();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Transaction Error");
+                throw;
+            }
+            finally
+            {
+                await context1.Database.CloseConnectionAsync();
+                await context2.Database.CloseConnectionAsync();
+            }
+        }
+    }
 }

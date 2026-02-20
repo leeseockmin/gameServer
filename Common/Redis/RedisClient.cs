@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
@@ -8,7 +8,6 @@ namespace Common.Redis
 	{
 		private readonly ILogger<RedisClient> _logger;
 		private Lazy<ConnectionMultiplexer> _connectionMultiplexer;
-		private IServer _server;
 
 		private string _connectionString;
 
@@ -16,7 +15,7 @@ namespace Common.Redis
 		{
 			_logger = logger;
 			_connectionString = configuration.GetConnectionString("RedisConnection");
-			
+
 			_connectionMultiplexer = new Lazy<ConnectionMultiplexer>(() =>
 			{
 				try
@@ -39,7 +38,7 @@ namespace Common.Redis
 		{
 			return _connectionMultiplexer.Value;
 		}
-		
+
 		public bool IsConnect()
 		{
 			var redisClient = this.GetConnectionMultiplexer();
@@ -53,7 +52,7 @@ namespace Common.Redis
 				return null;
 			}
 			var redisClient = this.GetConnectionMultiplexer();
-			if(redisClient == null)
+			if (redisClient == null)
 			{
 				return null;
 			}
@@ -66,13 +65,13 @@ namespace Common.Redis
 			{
 				await this.GetDatabase().HashSetAsync(redisKey, hashKey, Newtonsoft.Json.JsonConvert.SerializeObject(hashValue));
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				_logger.LogError(ex.Message);
 			}
-			
 		}
-		private async Task<T> HashGet<T>(string redisKey, string hashKey) where T : class 
+
+		private async Task<T> HashGet<T>(string redisKey, string hashKey) where T : class
 		{
 			T getObject = null;
 			try
@@ -84,13 +83,14 @@ namespace Common.Redis
 				}
 				getObject = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(redisValue);
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				_logger.LogError(ex.Message);
 			}
 
 			return getObject;
 		}
+
 		private async Task<string> HashGet(string redisKey, string hashKey)
 		{
 			string getObject = null;
@@ -121,14 +121,18 @@ namespace Common.Redis
 			{
 				_logger.LogError(ex.Message);
 			}
-
 		}
 
 		private async Task ExpiryAsync(string redisKey, TimeSpan expire)
 		{
-			await this.GetDatabase().KeyExpireAsync(redisKey, expire);
+			try
+			{
+				await this.GetDatabase().KeyExpireAsync(redisKey, expire);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "[RedisClient] ExpiryAsync failed for key: {RedisKey}", redisKey);
+			}
 		}
-
-
 	}
 }
