@@ -1,3 +1,5 @@
+using Share.Common;
+
 namespace Share.Packet
 {
 	public class PacketRequestBase
