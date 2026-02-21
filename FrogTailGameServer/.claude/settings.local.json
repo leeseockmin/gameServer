@@ -14,7 +14,8 @@
       "Bash(dotnet test:*)",
       "Bash(git push:*)",
       "Bash(git log:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(git ls-tree:*)"
     ]
   }
 }
