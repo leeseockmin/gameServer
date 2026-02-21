@@ -73,3 +73,20 @@ C# 및 .NET 환경에서 고품질의 코드를 작성하고 유지보수하기 
 사용금지 ConfigureAwait(false);
 WPF 개발시 필요로 할경우 ConfigureAwait(ture); 사용가능
 패킷의 변수명의 경우 PascalCase 로 진행한다. 그외에 변수명은 camelCase로 진행한다.
+
+## 8. gRPC 서비스 등록 규칙
+
+신규 gRPC 서비스를 추가할 때 **Program.cs에 직접 `MapGrpcService<T>()`를 쓰지 않는다.**
+반드시 `GrpcServices/GrpcServiceExtensions.cs` 파일의 `MapGrpcServices()` 메서드 안에 한 줄 추가한다.
+
+```csharp
+// GrpcServices/GrpcServiceExtensions.cs
+public static IEndpointRouteBuilder MapGrpcServices(this IEndpointRouteBuilder app)
+{
+    app.MapGrpcService<GrpcAuthService>();
+    app.MapGrpcService<GrpcShopService>();  // ← 신규 서비스는 여기에 추가
+    return app;
+}
+```
+
+Program.cs에는 `app.MapGrpcServices();` 한 줄만 유지한다.

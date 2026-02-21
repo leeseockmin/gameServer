@@ -99,8 +99,8 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // gRPC 서비스 등록
-    app.MapGrpcService<GrpcAuthService>();
+    // gRPC 서비스 등록 (GrpcServices/GrpcServiceExtensions.cs 에서 관리)
+    app.MapGrpcServices();
 
     app.Run();
 }
