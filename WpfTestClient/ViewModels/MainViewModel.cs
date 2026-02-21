@@ -97,8 +97,9 @@ public sealed partial class MainViewModel : ObservableObject
         AppendRequest($"  DeviceId:    {DeviceId}");
         AppendRequest($"  NickName:    {NickName}");
         AppendRequest($"  AccessToken: {(string.IsNullOrEmpty(AccessToken) ? "\"\" (신규)" : Truncate(AccessToken, 16) + "...")}");
+        
 
-        try
+		try
         {
             var response = await _grpcService.LoginAsync(LoginType, DeviceId, NickName, AccessToken);
 
