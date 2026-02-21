@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>WpfTestClient</RootNamespace>
+    <AssemblyName>WpfTestClient</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- gRPC Client -->
+    <PackageReference Include="Grpc.Net.Client" Version="2.63.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.3" />
+    <PackageReference Include="Grpc.Tools" Version="2.63.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- CommunityToolkit.Mvvm: RelayCommand, ObservableObject -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      서버 Protos 폴더를 ProtoRoot로 지정하여 import 경로를 맞춥니다.
+      login.proto / shop.proto 모두 "Protos/common.proto" 를 import하므로
+      ProtoRoot를 서버 프로젝트 루트(..\FrogTailGameServer)로 설정합니다.
+      Link 속성으로 복사 없이 논리적 경로만 지정합니다.
+    -->
+    <Protobuf Include="..\FrogTailGameServer\Protos\common.proto"
+              GrpcServices="Client"
+              Link="Protos\common.proto"
+              ProtoRoot="..\FrogTailGameServer" />
+    <Protobuf Include="..\FrogTailGameServer\Protos\login.proto"
+              GrpcServices="Client"
+              Link="Protos\login.proto"
+              ProtoRoot="..\FrogTailGameServer" />
+    <Protobuf Include="..\FrogTailGameServer\Protos\shop.proto"
+              GrpcServices="Client"
+              Link="Protos\shop.proto"
+              ProtoRoot="..\FrogTailGameServer" />
+  </ItemGroup>
+
+</Project>
