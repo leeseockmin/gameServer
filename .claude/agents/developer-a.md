@@ -283,4 +283,5 @@ Update-Database -TargetMigration "{이전마이그레이션명}" -Project DB.Dat
 - [ ] 신규 기능 시 `generate-proto.bat` 실행 후 proto가 갱신되었는가?
 - [ ] `Program.cs`에 새 서비스가 `MapGrpcService<T>()`로 등록되었는가?
 - [ ] 단위 테스트가 정상/예외/경계값 케이스를 커버하는가?
+- [ ] 빌드가 성공하는가? (`dotnet build`)
 - [ ] Conventional Commit 형식으로 커밋 메시지를 작성했는가?
