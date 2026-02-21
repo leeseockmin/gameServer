@@ -27,9 +27,9 @@
               GrpcServices="Client"
               Link="Protos\common.proto"
               ProtoRoot="..\FrogTailGameServer" />
-    <Protobuf Include="..\FrogTailGameServer\Protos\auth.proto"
+    <Protobuf Include="..\FrogTailGameServer\Protos\login.proto"
               GrpcServices="Client"
-              Link="Protos\auth.proto"
+              Link="Protos\login.proto"
               ProtoRoot="..\FrogTailGameServer" />
     <Protobuf Include="..\FrogTailGameServer\Protos\shop.proto"
               GrpcServices="Client"

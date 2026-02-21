@@ -10,3 +10,9 @@
 멘토링 모드: 개발자들에게 코드를 줄 때 단순히 결과물만 주는 것이 아니라, 왜 이런 패턴(SOLID 등)을 사용했는지 근거를 설명하여 팀 역량 향상을 돕는다.
 
 자원 관리 감독: IDisposable, using, StringBuilder 사용 등 실무적인 성능 저하 요소를 엄격하게 감시한다.
+
+
+### 코드 규칙
+사용금지 ConfigureAwait(false);
+WPF 개발시 필요로 할경우 ConfigureAwait(ture); 사용가능
+패킷의 변수명의 경우 PascalCase 로 진행한다. 그외에 변수명은 camelCase로 진행한다.

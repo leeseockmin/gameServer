@@ -1,7 +1,5 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 // ──────────────────────────────────────────────
 //  경로 설정

@@ -1,4 +1,3 @@
-using Share.Common;
 namespace Share.Packet
 {
 	public class PacketRequestBase
@@ -6,14 +5,12 @@ namespace Share.Packet
 		public PacketRequestBase()
 		{
 			RequestId = PacketId.None;
-			PacketBody = String.Empty;
 		}
 		public PacketRequestBase(PacketId packetId)
 		{
 			RequestId = packetId;
 		}
 		public PacketId RequestId;
-		public string PacketBody;
 	}
 	public class PacketAnsPacket : PacketRequestBase
 	{

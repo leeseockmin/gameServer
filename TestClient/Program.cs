@@ -4,7 +4,6 @@ using Grpc.Net.Client;
 
 class Program
 {
-    // 서버 gRPC 주소 (h2c: HTTP/2 without TLS)
     private const string ServerAddress = "http://localhost:9001";
 
     static async Task Main(string[] args)
@@ -13,189 +12,142 @@ class Program
 
         using var channel = GrpcChannel.ForAddress(ServerAddress, new GrpcChannelOptions
         {
-            // h2c (TLS 없는 HTTP/2) 허용
             HttpHandler = new SocketsHttpHandler
             {
                 EnableMultipleHttp2Connections = true
             }
         });
 
-        await RunLoginTestAsync(channel);
-        await RunGuestLoginTestAsync(channel);
-    }
-
-    private static async Task RunLoginTestAsync(GrpcChannel channel)
-    {
-        var authClient = new AuthService.AuthServiceClient(channel);
-
-        Console.WriteLine("\n[TestClient] === VerifyLogin 테스트 ===");
-        try
-        {
-            var verifyRequest = new VerifyLoginRequest
-            {
-                OsType = OsType.Aos,
-                LoginType = LoginType.Guest,
-                AccessToken = "guest-token-for-test"
-            };
-
-            var verifyResponse = await authClient.VerifyLoginAsync(verifyRequest);
-            Console.WriteLine($"[VerifyLogin] ErrorCode: {verifyResponse.ErrorCode}");
-        }
-        catch (RpcException ex)
-        {
-            Console.WriteLine($"[VerifyLogin] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
-        }
-
-        Console.WriteLine("\n[TestClient] === Login 테스트 ===");
-        try
-        {
-            var loginRequest = new LoginRequest
-            {
-                DeviceId = "test-device-001",
-                NickName = "TestUser",
-                OsType = OsType.Windows,
-                LoginType = LoginType.Guest,
-                AccessToken = "guest-token-for-test"
-            };
-
-            var loginResponse = await authClient.LoginAsync(loginRequest);
-            Console.WriteLine($"[Login] ErrorCode: {loginResponse.ErrorCode}");
-            Console.WriteLine($"[Login] UserId:    {loginResponse.UserId}");
-            Console.WriteLine($"[Login] UserToken: {loginResponse.UserToken}");
-
-            if (loginResponse.ErrorCode == ErrorCode.Success)
-            {
-                Console.WriteLine("\n[TestClient] === GetShopList 테스트 (인증 헤더 포함) ===");
-                await RunGetShopListTestAsync(channel, loginResponse.UserId.ToString(), loginResponse.UserToken);
-            }
-        }
-        catch (RpcException ex)
-        {
-            Console.WriteLine($"[Login] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
-        }
+        await RunLoginScenariosAsync(channel);
     }
 
     /// <summary>
-    /// Guest 로그인 시나리오:
-    ///   1. 신규: AccessToken 빈 값 → 서버가 GuestToken 발급, UserId > 0 확인
-    ///   2. 재로그인: 시나리오1에서 받은 GuestToken으로 재로그인 → 동일 UserId 반환 확인
+    /// 통합 로그인 시나리오:
+    ///   1. Guest 신규 로그인 (AccessToken = "") → GuestToken 발급 확인
+    ///   2. ShopList 조회 (신규 로그인 세션으로 인증 확인)
+    ///   3. Guest 재로그인 (AccessToken = GuestToken) → 동일 UserId 확인
+    ///   4. ShopList 조회 (재로그인 세션으로 인증 확인)
     /// </summary>
-    private static async Task RunGuestLoginTestAsync(GrpcChannel channel)
+    private static async Task RunLoginScenariosAsync(GrpcChannel channel)
     {
-        var authClient = new AuthService.AuthServiceClient(channel);
+        var authClient = new LoginService.LoginServiceClient(channel);
 
-        Console.WriteLine("\n[TestClient] === Guest 신규 로그인 테스트 ===");
+        // ------------------------------------------------------------------
+        // 시나리오 1: Guest 신규 로그인
+        // ------------------------------------------------------------------
+        Console.WriteLine("\n[TestClient] === [1/4] Guest 신규 로그인 ===");
         Console.WriteLine("[TestClient] AccessToken = \"\" (빈 값) → 서버에서 GuestToken 발급 기대");
 
-        string guestToken = string.Empty;
-        long firstUserId = 0;
+        string guestToken  = string.Empty;
+        long   firstUserId = 0;
+        string userToken1  = string.Empty;
 
         try
         {
-            var newGuestRequest = new LoginRequest
+            var response = await authClient.LoginAsync(new LoginRequest
             {
-                DeviceId  = "guest-device-new",
-                NickName  = "GuestUser",
-                OsType    = OsType.Windows,
-                LoginType = LoginType.Guest,
-                AccessToken = ""   // 신규: 빈 값
-            };
+                DeviceId    = "guest-device-001",
+                NickName    = "GuestUser",
+                OsType      = OsType.Windows,
+                LoginType   = LoginType.Guest,
+                AccessToken = string.Empty
+            });
 
-            var newGuestResponse = await authClient.LoginAsync(newGuestRequest);
-            Console.WriteLine($"[Guest 신규] ErrorCode: {newGuestResponse.ErrorCode}");
-            Console.WriteLine($"[Guest 신규] UserId:    {newGuestResponse.UserId}");
-            Console.WriteLine($"[Guest 신규] UserToken: {newGuestResponse.UserToken}");
-            Console.WriteLine($"[Guest 신규] GuestToken: {newGuestResponse.GuestToken}");
+            Console.WriteLine($"[1/4] ErrorCode:  {response.ErrorCode}");
+            Console.WriteLine($"[1/4] UserId:     {response.UserId}");
+            Console.WriteLine($"[1/4] UserToken:  {response.UserToken}");
+            Console.WriteLine($"[1/4] GuestToken: {response.GuestToken}");
 
-            if (newGuestResponse.ErrorCode == ErrorCode.Success)
+            if (response.ErrorCode != ErrorCode.Success)
             {
-                bool guestTokenOk = !string.IsNullOrEmpty(newGuestResponse.GuestToken);
-                bool userIdOk     = newGuestResponse.UserId > 0;
-
-                Console.WriteLine($"[Guest 신규] PASS - GuestToken 발급 여부: {guestTokenOk}, UserId > 0: {userIdOk}");
-
-                guestToken  = newGuestResponse.GuestToken;
-                firstUserId = newGuestResponse.UserId;
-            }
-            else
-            {
-                Console.WriteLine("[Guest 신규] FAIL - ErrorCode가 Success가 아님");
+                Console.WriteLine("[1/4] FAIL - 이후 시나리오 중단");
                 return;
             }
+
+            Console.WriteLine($"[1/4] PASS - GuestToken 발급: {!string.IsNullOrEmpty(response.GuestToken)}, UserId > 0: {response.UserId > 0}");
+            guestToken  = response.GuestToken;
+            firstUserId = response.UserId;
+            userToken1  = response.UserToken;
         }
         catch (RpcException ex)
         {
-            Console.WriteLine($"[Guest 신규] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+            Console.WriteLine($"[1/4] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
             return;
         }
 
-        Console.WriteLine("\n[TestClient] === Guest 재로그인 테스트 ===");
-        Console.WriteLine($"[TestClient] AccessToken = \"{guestToken}\" (시나리오1에서 받은 GuestToken)");
-        Console.WriteLine("[TestClient] 기대: 시나리오1과 동일한 UserId 반환");
+        // ------------------------------------------------------------------
+        // 시나리오 2: ShopList 조회 (신규 로그인 세션)
+        // ------------------------------------------------------------------
+        Console.WriteLine("\n[TestClient] === [2/4] ShopList 조회 (신규 로그인 세션) ===");
+        await RunGetShopListTestAsync(channel, firstUserId.ToString(), userToken1);
+
+        // ------------------------------------------------------------------
+        // 시나리오 3: Guest 재로그인
+        // ------------------------------------------------------------------
+        Console.WriteLine("\n[TestClient] === [3/4] Guest 재로그인 ===");
+        Console.WriteLine($"[TestClient] AccessToken = \"{guestToken}\" → 동일 UserId 기대");
+
+        string userToken2 = string.Empty;
 
         try
         {
-            var reLoginRequest = new LoginRequest
+            var response = await authClient.LoginAsync(new LoginRequest
             {
-                DeviceId  = "guest-device-new",
-                NickName  = "GuestUser",
-                OsType    = OsType.Windows,
-                LoginType = LoginType.Guest,
-                AccessToken = guestToken   // 재로그인: 발급받은 GuestToken 사용
-            };
+                DeviceId    = "guest-device-001",
+                NickName    = "GuestUser",
+                OsType      = OsType.Windows,
+                LoginType   = LoginType.Guest,
+                AccessToken = guestToken
+            });
 
-            var reLoginResponse = await authClient.LoginAsync(reLoginRequest);
-            Console.WriteLine($"[Guest 재로그인] ErrorCode: {reLoginResponse.ErrorCode}");
-            Console.WriteLine($"[Guest 재로그인] UserId:    {reLoginResponse.UserId}");
-            Console.WriteLine($"[Guest 재로그인] UserToken: {reLoginResponse.UserToken}");
-            Console.WriteLine($"[Guest 재로그인] GuestToken: {reLoginResponse.GuestToken} (재로그인은 빈 값이어야 함)");
+            Console.WriteLine($"[3/4] ErrorCode:  {response.ErrorCode}");
+            Console.WriteLine($"[3/4] UserId:     {response.UserId}");
+            Console.WriteLine($"[3/4] GuestToken: {response.GuestToken} (재로그인은 빈 값이어야 함)");
 
-            if (reLoginResponse.ErrorCode == ErrorCode.Success)
+            if (response.ErrorCode != ErrorCode.Success)
             {
-                bool sameUserId      = reLoginResponse.UserId == firstUserId;
-                bool noGuestToken    = string.IsNullOrEmpty(reLoginResponse.GuestToken);
-
-                Console.WriteLine($"[Guest 재로그인] PASS - 동일 UserId: {sameUserId} ({firstUserId} == {reLoginResponse.UserId}), GuestToken 미발급: {noGuestToken}");
+                Console.WriteLine("[3/4] FAIL");
+                return;
             }
-            else
-            {
-                Console.WriteLine("[Guest 재로그인] FAIL - ErrorCode가 Success가 아님");
-            }
+
+            bool sameUserId   = response.UserId == firstUserId;
+            bool noGuestToken = string.IsNullOrEmpty(response.GuestToken);
+            Console.WriteLine($"[3/4] PASS - 동일 UserId: {sameUserId} ({firstUserId}=={response.UserId}), GuestToken 미발급: {noGuestToken}");
+            userToken2 = response.UserToken;
         }
         catch (RpcException ex)
         {
-            Console.WriteLine($"[Guest 재로그인] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+            Console.WriteLine($"[3/4] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+            return;
         }
+
+        // ------------------------------------------------------------------
+        // 시나리오 4: ShopList 조회 (재로그인 세션)
+        // ------------------------------------------------------------------
+        Console.WriteLine("\n[TestClient] === [4/4] ShopList 조회 (재로그인 세션) ===");
+        await RunGetShopListTestAsync(channel, firstUserId.ToString(), userToken2);
     }
 
     private static async Task RunGetShopListTestAsync(GrpcChannel channel, string userId, string userToken)
     {
         var shopClient = new ShopService.ShopServiceClient(channel);
-
-        // gRPC 메타데이터로 인증 헤더 전송 (AuthInterceptor에서 검증)
         var headers = new Metadata
         {
-            { "x-userid", userId },
+            { "x-userid",      userId },
             { "authorization", $"Bearer {userToken}" }
         };
 
         try
         {
-            var shopResponse = await shopClient.GetShopListAsync(
-                new GetShopListRequest(),
-                headers);
-
-            Console.WriteLine($"[GetShopList] ErrorCode: {shopResponse.ErrorCode}");
-            Console.WriteLine($"[GetShopList] ShopCount: {shopResponse.ShopDatas.Count}");
-
-            foreach (var shop in shopResponse.ShopDatas)
-            {
+            var response = await shopClient.ShopListAsync(new ShopListRequest(), headers);
+            Console.WriteLine($"  ErrorCode: {response.ErrorCode}");
+            Console.WriteLine($"  ShopCount: {response.ShopDatas.Count}");
+            foreach (var shop in response.ShopDatas)
                 Console.WriteLine($"  Shop ID: {shop.ShopId}, Items: {shop.ShopItemDatas.Count}");
-            }
         }
         catch (RpcException ex)
         {
-            Console.WriteLine($"[GetShopList] gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
+            Console.WriteLine($"  gRPC Error: {ex.Status.StatusCode} - {ex.Status.Detail}");
         }
     }
 }

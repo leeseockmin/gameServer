@@ -70,6 +70,6 @@ C# 및 .NET 환경에서 고품질의 코드를 작성하고 유지보수하기 
 * **Git**: 의미 있는 단위로 커밋하고, 명확한 커밋 메시지 규칙을 따릅니다.
 
 ## 7. 코드 규칙
-사용금지 ConfigureAwait(false); 
-변수명 패턴은 camelCase 로 진행한다.
-
+사용금지 ConfigureAwait(false);
+WPF 개발시 필요로 할경우 ConfigureAwait(ture); 사용가능
+패킷의 변수명의 경우 PascalCase 로 진행한다. 그외에 변수명은 camelCase로 진행한다.

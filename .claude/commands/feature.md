@@ -49,7 +49,9 @@ Update-Database -Context {Context} -Project DB.Data -StartupProject FrogTailGame
 - 배포 전 체크리스트 점검
 - QA 결과 보고서 작성 (승인 / 미승인)
 
----
+### 필수 참조.
+각각의 agent는 skills 하위에있는 {agent이름}.md 를 확인하고, skills 에 맞게 진행
 
 각 단계가 완료된 후 결과를 요약해서 다음 단계로 넘겨줘.
 QA가 미승인 판정을 내리면 해당 이슈를 개발자에게 피드백하고 재작업 후 QA를 다시 진행해줘.
+
