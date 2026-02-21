@@ -20,7 +20,7 @@ namespace DB
 
         private IDbContextFactory<GameDBContext> _gameContextFactory;
         private IDbContextFactory<AccountDBContext> _acountContextFactory;
-        ILogger<DataBaseManager> _logger;
+        private ILogger<DataBaseManager> _logger;
         public DataBaseManager(ILogger<DataBaseManager> logger, IDbContextFactory<AccountDBContext> acountContextFactory, IDbContextFactory<GameDBContext> gameContextFactory)
         {
             _logger = logger;

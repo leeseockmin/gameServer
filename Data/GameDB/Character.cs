@@ -20,7 +20,8 @@ namespace DB.Data.GameDB
 		public long characterId { get; set; }
 		[Required]
 		public long userId { get; set; }
-		public int charactetType { get; set; }
+		[Column("charactetType")]
+		public int characterType { get; set; }
 		public DateTime createTime { get; set; }
 	}
 }

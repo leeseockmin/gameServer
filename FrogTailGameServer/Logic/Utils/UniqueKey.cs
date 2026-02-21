@@ -2,49 +2,49 @@
 {
 	public class UniqueKey
 	{
-		private static DateTime EpochDate = new DateTime(2024, 06, 01);
-		private static int MaxSize = 64;
-		private static int TimeBitSize = 41;
-		private static int ShardBitSize = 10;
-		private static long IncreseMentCount;
-		private static int ServerId;
-		private static int IdBitCount;
-		private static long CreateIdCount;
+		private static DateTime _epochDate = new DateTime(2024, 06, 01);
+		private static int _maxSize = 64;
+		private static int _timeBitSize = 41;
+		private static int _shardBitSize = 10;
+		private static long _incrementCount;
+		private static int _serverId;
+		private static int _idBitCount;
+		private static long _createIdCount;
 
 		public static void LoadUniqueKey(int serverId)
 		{
-			ServerId = serverId;
-			IdBitCount = MaxSize - TimeBitSize - ShardBitSize;
-			CreateIdCount = (long)Math.Pow(2, IdBitCount);
-			IncreseMentCount = 1;
+			_serverId = serverId;
+			_idBitCount = _maxSize - _timeBitSize - _shardBitSize;
+			_createIdCount = (long)Math.Pow(2, _idBitCount);
+			_incrementCount = 1;
 		}
 
-		private static object lockObject= new object();
+		private static object _lockObject = new object();
 
 		public static long GetKey()
 		{
 			var now = DateTime.UtcNow;
-			var m = now - EpochDate;
-			
-			var calculateTicks = (long)m.TotalMilliseconds;
-			var shiftTicks = calculateTicks << (MaxSize - TimeBitSize);
+			var m = now - _epochDate;
 
-			var shiftServerId = shiftTicks | (long)(ServerId << IdBitCount);
+			var calculateTicks = (long)m.TotalMilliseconds;
+			var shiftTicks = calculateTicks << (_maxSize - _timeBitSize);
+
+			var shiftServerId = shiftTicks | (long)(_serverId << _idBitCount);
 
 			long createKey = 0;
-			lock (lockObject)
+			lock (_lockObject)
 			{
-				if(IncreseMentCount > CreateIdCount)
+				if(_incrementCount > _createIdCount)
 				{
-					IncreseMentCount = 1;
+					_incrementCount = 1;
 				}
 
-				createKey = shiftServerId | (IncreseMentCount % CreateIdCount);
-				++IncreseMentCount;
+				createKey = shiftServerId | (_incrementCount % _createIdCount);
+				++_incrementCount;
 			}
 
 			return createKey;
 
 		}
-	}	
+	}
 }

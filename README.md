@@ -14,8 +14,9 @@
 6. [DB 작업 방법](#6-db-작업-방법)
 7. [에러 코드 추가 방법](#7-에러-코드-추가-방법)
 8. [테스트 방법](#8-테스트-방법)
-9. [브랜치 전략 / 개발 워크플로우](#9-브랜치-전략--개발-워크플로우)
-10. [코딩 컨벤션](#10-코딩-컨벤션)
+9. [클라이언트 적용 방법](#9-클라이언트-적용-방법)
+10. [브랜치 전략 / 개발 워크플로우](#10-브랜치-전략--개발-워크플로우)
+11. [코딩 컨벤션](#11-코딩-컨벤션)
 
 ---
 
@@ -773,7 +774,192 @@ dotnet test
 
 ---
 
-## 9. 브랜치 전략 / 개발 워크플로우
+## 9. 클라이언트 적용 방법
+
+### WpfTestClient (GUI 테스트 클라이언트)
+
+#### 사전 조건
+
+- Windows 환경 필수 (.NET 8 Windows TFM: `net8.0-windows`)
+- 서버(`FrogTailGameServer`)가 먼저 실행되어 있어야 합니다.
+- Visual Studio 2022 또는 .NET SDK 8.0 이상 설치 필요
+
+#### 빌드 및 실행
+
+Visual Studio에서:
+
+1. `FrogTailGameServer.sln` 열기
+2. 시작 프로젝트를 `WpfTestClient`로 변경
+3. F5 또는 Ctrl+F5 실행
+
+CLI에서:
+
+```bash
+cd WpfTestClient
+dotnet run
+```
+
+#### WpfTestClient 화면 구성
+
+| 영역 | 설명 |
+|------|------|
+| Server Address | gRPC 서버 주소 (기본값: `http://localhost:9001`) |
+| DeviceId / NickName / LoginType / AccessToken | 로그인 파라미터 입력 |
+| Login 버튼 | 단일 로그인 요청 실행 |
+| GetShopList 버튼 | 로그인 후 인증 헤더를 포함한 ShopList 조회 |
+| 시나리오 구성 버튼 | 패킷 목록 팝업에서 순서 지정 후 일괄 실행 |
+| Request / Response Log | 요청/응답 내용 실시간 표시 |
+
+#### Guest 신규 로그인 시나리오 (WpfTestClient)
+
+1. LoginType = `Guest`, AccessToken = 빈 값으로 Login 실행
+2. Response Log에서 GuestToken 확인 → AccessToken 필드에 자동 채움
+3. 이후 로그인 시 자동 채워진 GuestToken을 그대로 사용하면 동일 UserId로 재로그인
+
+---
+
+### TestClient (콘솔 통합 테스트)
+
+#### 사전 조건
+
+- 서버(`FrogTailGameServer`)가 먼저 실행되어 있어야 합니다.
+- 운영 환경이 아닌 `Development` 환경을 권장합니다. (userId 평문 전송 허용)
+
+#### 실행
+
+```bash
+cd TestClient
+dotnet run
+```
+
+#### 자동 실행 시나리오
+
+TestClient는 아래 4개 시나리오를 자동으로 순차 실행합니다:
+
+| 단계 | 내용 | 확인 포인트 |
+|------|------|------------|
+| 1/4 | Guest 신규 로그인 (`AccessToken=""`) | GuestToken 발급 여부, UserId > 0 |
+| 2/4 | ShopList 조회 (신규 세션) | ErrorCode = Success |
+| 3/4 | Guest 재로그인 (`AccessToken=GuestToken`) | 동일 UserId 반환, GuestToken 미발급 |
+| 4/4 | ShopList 조회 (재로그인 세션) | ErrorCode = Success |
+
+---
+
+### 서버-클라이언트 연결 확인 방법
+
+1. 서버 기동 후 아래 로그 확인:
+
+```
+[yyyy-MM-dd HH:mm:ss INF] Now listening on: http://0.0.0.0:9001
+```
+
+2. TestClient 또는 WpfTestClient 실행 후 시나리오 1 (Login) 결과 확인:
+
+```
+[1/4] ErrorCode:  Success
+[1/4] UserId:     1234
+[1/4] GuestToken: eyJ...
+```
+
+3. 시나리오 2 (ShopList) 결과 확인:
+
+```
+  ErrorCode: Success
+  ShopCount: N
+```
+
+---
+
+### gRPC 패킷 추가 시 클라이언트에서 해야 할 작업
+
+새 API(예: `InventoryService.GetInventory`)를 추가했을 때 클라이언트 3곳을 수정합니다.
+
+#### Step 1: PacketItem.All에 등록
+
+`WpfTestClient/Models/PacketItem.cs`
+
+```csharp
+public static IReadOnlyList<PacketItem> All { get; } =
+[
+    new PacketItem { ServiceName = "LoginService",     RpcName = "Login",        RequiresAuth = false },
+    new PacketItem { ServiceName = "LoginService",     RpcName = "VerityLogin",  RequiresAuth = false },
+    new PacketItem { ServiceName = "ShopService",      RpcName = "ShopList",     RequiresAuth = true  },
+    // 신규 추가
+    new PacketItem { ServiceName = "InventoryService", RpcName = "GetInventory", RequiresAuth = true  },
+];
+```
+
+- `RequiresAuth = true`이면 시나리오 실행 시 세션이 없을 경우 자동으로 스킵됩니다.
+
+#### Step 2: GrpcClientService에 메서드 추가
+
+`WpfTestClient/Services/GrpcClientService.cs`
+
+```csharp
+private InventoryService.InventoryServiceClient GetInventoryClient()
+    => new(GetOrCreateChannel());
+
+public async Task<GetInventoryResponse> GetInventoryAsync(CancellationToken ct = default)
+{
+    var headers = BuildAuthHeaders();
+    return await GetInventoryClient().GetInventoryAsync(
+        new GetInventoryRequest(), headers, cancellationToken: ct);
+}
+```
+
+#### Step 3: MainViewModel의 ExecutePacketAsync에 case 추가
+
+`WpfTestClient/ViewModels/MainViewModel.cs`
+
+```csharp
+case "InventoryService.GetInventory":
+{
+    var response = await _grpcService.GetInventoryAsync();
+    AppendResponse($"  ErrorCode: {response.ErrorCode}, ItemCount: {response.Items.Count}");
+    break;
+}
+```
+
+단일 버튼으로 직접 실행하려면 추가로 `[RelayCommand]` 메서드를 작성하고 XAML에 버튼을 바인딩합니다.
+
+---
+
+### 트러블슈팅
+
+#### 포트 연결 오류
+
+```
+gRPC Error: Unavailable — failed to connect
+```
+
+- 서버가 실행 중인지 확인: `http://localhost:9001`
+- 방화벽/포트 차단 여부 확인
+- WpfTestClient의 Server Address 필드가 `http://localhost:9001` 인지 확인 (https 아님)
+
+#### 채널 주소 변경 후 연결 안 됨
+
+- WpfTestClient: Server Address 변경 후 반드시 "채널 재구성" 버튼 클릭
+- TestClient: `Program.cs`의 `ServerAddress` 상수를 직접 수정하고 재빌드
+
+#### 인증 오류 (gRPC Status: Unauthenticated)
+
+```
+gRPC Error: Unauthenticated
+```
+
+- 로그인(Login) 먼저 실행한 뒤 인증이 필요한 API 호출 필요
+- `Development` 환경에서는 userId를 평문으로 전송 (`x-userid: 1234`)
+- `Production` 환경에서는 `SecretManager.EncryptString(userId)` 암호화 값을 전송
+
+#### proto 파일 변경 후 클라이언트 빌드 오류
+
+- 서버에서 `generate-proto.bat` 실행 후 생성된 `.proto` 파일을 클라이언트 프로젝트의 `Protos/` 디렉토리에도 복사
+- 클라이언트 `.csproj`에 `<Protobuf Include="Protos\*.proto" GrpcServices="Client" />` 등록 확인
+- 빌드 후 자동 생성된 stub 클래스(`*Grpc.cs`)를 확인하고 신규 클라이언트 코드 작성
+
+---
+
+## 10. 브랜치 전략 / 개발 워크플로우
 
 ### 브랜치 명명 규칙
 
@@ -844,7 +1030,7 @@ QA 미승인 시 개발자에게 피드백 -> 재작업 -> QA 재검증 반복.
 
 ---
 
-## 10. 코딩 컨벤션
+## 11. 코딩 컨벤션
 
 신규 코드 작성 전 반드시 숙지하고 PR 제출 전 자기 검증을 완료하세요.
 
