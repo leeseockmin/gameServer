@@ -15,8 +15,9 @@
 7. [에러 코드 추가 방법](#7-에러-코드-추가-방법)
 8. [테스트 방법](#8-테스트-방법)
 9. [클라이언트 적용 방법](#9-클라이언트-적용-방법)
-10. [브랜치 전략 / 개발 워크플로우](#10-브랜치-전략--개발-워크플로우)
-11. [코딩 컨벤션](#11-코딩-컨벤션)
+10. [멀티 클라이언트 Proto 적용 가이드](#10-멀티-클라이언트-proto-적용-가이드)
+11. [브랜치 전략 / 개발 워크플로우](#11-브랜치-전략--개발-워크플로우)
+12. [코딩 컨벤션](#12-코딩-컨벤션)
 
 ---
 
@@ -959,7 +960,238 @@ gRPC Error: Unauthenticated
 
 ---
 
-## 10. 브랜치 전략 / 개발 워크플로우
+## 10. 멀티 클라이언트 Proto 적용 가이드
+
+서버에서 생성한 `.proto` 파일을 Unity, Unreal, Python, Java 등 다양한 클라이언트에 적용하는 방법을 설명합니다.
+
+### Proto 파일 배포
+
+서버에서 `generate-proto.bat`을 실행하면 `Protos/*.proto` 파일이 생성됩니다.
+클라이언트는 이 파일을 **그대로** 복사해서 사용합니다.
+
+```
+gameServer/Protos/
+├── auth.proto      → 클라이언트 Protos/ 폴더에 복사
+├── shop.proto
+└── common.proto
+```
+
+> **주의**: proto 파일 내부의 `import "Protos/common.proto"` 경로는 수정하지 않고,
+> 컴파일 시 `--proto_path` 옵션으로 경로를 맞춰줍니다.
+
+---
+
+### 언어별 필드 접근 방식
+
+proto 필드는 `snake_case`로 정의되지만, 각 언어의 protoc 플러그인이 자동으로 변환합니다.
+
+| proto 필드 | C# (Unity) | C++ (Unreal) | Python | Java |
+|---|---|---|---|---|
+| `device_id` | `DeviceId` | `device_id()` / `set_device_id()` | `device_id` | `getDeviceId()` / `setDeviceId()` |
+| `user_token` | `UserToken` | `user_token()` | `user_token` | `getUserToken()` |
+| `error_code` | `ErrorCode` | `error_code()` | `error_code` | `getErrorCode()` |
+
+---
+
+### Unity (C#)
+
+**패키지 설치** (`Packages/manifest.json`)
+
+```json
+{
+  "dependencies": {
+    "com.github.grpc.grpc-unity": "2.51.0"
+  }
+}
+```
+
+> iOS/Android 빌드 시 `YetAnotherHttpHandler` 라이브러리를 추가로 설치해야 합니다.
+
+**proto 컴파일** (Windows)
+
+```bash
+protoc --proto_path=. --proto_path=Protos \
+       --csharp_out=Assets/Scripts/Proto \
+       --grpc_out=Assets/Scripts/Proto \
+       --plugin=protoc-gen-grpc=grpc_csharp_plugin.exe \
+       Protos/auth.proto Protos/common.proto
+```
+
+**사용 예시**
+
+```csharp
+// C# — PascalCase 자동 변환
+var channel = GrpcChannel.ForAddress("https://서버IP:9001");
+var client  = new Auth.AuthClient(channel);
+
+var response = await client.LoginAsync(new LoginRequest {
+    DeviceId  = SystemInfo.deviceUniqueIdentifier,
+    NickName  = "플레이어1",
+    LoginType = LoginTypeEnum.Guest
+});
+
+if (response.ErrorCode == ErrorCodeEnum.Success)
+    Debug.Log($"로그인 성공, UserId={response.UserId}");
+```
+
+---
+
+### Unreal Engine (C++)
+
+**패키지 설치** (vcpkg)
+
+```bash
+vcpkg install grpc:x64-windows
+```
+
+**proto 컴파일**
+
+```bash
+protoc --proto_path=. --proto_path=Protos \
+       --cpp_out=Source/Proto \
+       --grpc_out=Source/Proto \
+       --plugin=protoc-gen-grpc=grpc_cpp_plugin \
+       Protos/auth.proto Protos/common.proto
+```
+
+**사용 예시**
+
+```cpp
+// C++ — snake_case getter/setter 사용
+// !! gRPC 블로킹 호출은 반드시 Game Thread가 아닌 백그라운드 스레드에서 실행
+AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]()
+{
+    LoginRequest req;
+    req.set_device_id("device-123");
+    req.set_nick_name("플레이어1");
+    req.set_login_type(LOGIN_TYPE_GUEST);
+
+    LoginResponse res;
+    grpc::ClientContext ctx;
+    auto stub = Auth::NewStub(channel_);
+    grpc::Status status = stub->Login(&ctx, req, &res);
+
+    if (status.ok() && res.error_code() == ERROR_CODE_SUCCESS)
+    {
+        int64_t userId = res.user_id();
+        AsyncTask(ENamedThreads::GameThread, [userId]()
+        {
+            UE_LOG(LogTemp, Log, TEXT("로그인 성공 UserId=%lld"), userId);
+        });
+    }
+});
+```
+
+---
+
+### Python
+
+**패키지 설치**
+
+```bash
+pip install grpcio grpcio-tools
+```
+
+**proto 컴파일**
+
+```bash
+python -m grpc_tools.protoc \
+    --proto_path=. --proto_path=Protos \
+    --python_out=client \
+    --grpc_python_out=client \
+    Protos/auth.proto Protos/common.proto
+```
+
+**사용 예시**
+
+```python
+# Python — snake_case 직접 접근
+import grpc
+import client.auth_pb2 as auth_pb2
+import client.auth_pb2_grpc as auth_grpc
+
+channel = grpc.insecure_channel('서버IP:9001')
+stub    = auth_grpc.AuthStub(channel)
+
+req = auth_pb2.LoginRequest(
+    device_id  = "device-123",
+    nick_name  = "플레이어1",
+    login_type = auth_pb2.LOGIN_TYPE_GUEST
+)
+res = stub.Login(req)
+
+if res.error_code == auth_pb2.ERROR_CODE_SUCCESS:
+    print(f"로그인 성공, user_id={res.user_id}")
+```
+
+---
+
+### Java / Kotlin
+
+**Gradle 설정** (`build.gradle`)
+
+```groovy
+plugins {
+    id "com.google.protobuf" version "0.9.4"
+}
+
+dependencies {
+    implementation "io.grpc:grpc-okhttp:1.62.0"
+    implementation "io.grpc:grpc-protobuf-lite:1.62.0"
+    implementation "io.grpc:grpc-stub:1.62.0"
+}
+
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:3.25.1" }
+    plugins { grpc { artifact = "io.grpc:protoc-gen-grpc-java:1.62.0" } }
+    generateProtoTasks {
+        all()*.plugins { grpc {} }
+    }
+    sourceSets.main.proto.srcDirs = ["src/main/proto", "src/main/proto/Protos"]
+}
+```
+
+**사용 예시** (Kotlin)
+
+```kotlin
+// Java/Kotlin — camelCase getter/builder 사용
+val channel = ManagedChannelBuilder.forAddress("서버IP", 9001)
+    .usePlaintext().build()
+val stub = AuthGrpc.newBlockingStub(channel)
+
+val req = LoginRequest.newBuilder()
+    .setDeviceId("device-123")
+    .setNickName("플레이어1")
+    .setLoginType(LoginTypeEnum.GUEST)
+    .build()
+
+val res = stub.login(req)
+if (res.errorCode == ErrorCodeEnum.SUCCESS)
+    println("로그인 성공, userId=${res.userId}")
+```
+
+---
+
+### import 경로 문제 해결
+
+서버 proto 파일에 `import "Protos/common.proto"`가 있는 경우,
+`--proto_path`를 두 개 지정해 경로를 해결합니다.
+
+```bash
+# 올바른 방법 — proto 파일을 수정하지 않고 경로만 추가
+protoc \
+  --proto_path=.       \   # 프로젝트 루트
+  --proto_path=Protos  \   # import 없는 단독 파일도 찾을 수 있도록
+  --csharp_out=출력폴더 \
+  Protos/auth.proto Protos/common.proto
+```
+
+> proto 파일 자체는 절대 수정하지 않습니다.
+> 서버가 업데이트하면 클라이언트는 파일을 복사하기만 하면 됩니다.
+
+---
+
+## 11. 브랜치 전략 / 개발 워크플로우
 
 ### 브랜치 명명 규칙
 
@@ -1030,7 +1262,7 @@ QA 미승인 시 개발자에게 피드백 -> 재작업 -> QA 재검증 반복.
 
 ---
 
-## 11. 코딩 컨벤션
+## 12. 코딩 컨벤션
 
 신규 코드 작성 전 반드시 숙지하고 PR 제출 전 자기 검증을 완료하세요.
 
