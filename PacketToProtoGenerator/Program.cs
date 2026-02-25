@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -35,7 +37,7 @@ Directory.CreateDirectory(protoOutputPath);
 var skipFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 {
     "PacketRequestBase.cs",
-    "PacketId.cs",
+    "PackettBase.cs",
     "Class1.cs",
 };
 

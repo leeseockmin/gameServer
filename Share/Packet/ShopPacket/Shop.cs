@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Share.Common;
 
 namespace Share.Packet.ShopPacket
 {
@@ -11,25 +7,36 @@ namespace Share.Packet.ShopPacket
 		public int ShopId { get; set; }
 		public List<ShopItemData> ShopItemDatas { get; set; }
 	}
+
 	public class ShopItemData
 	{
 		public int ShopItemId { get; set; }
 		public long BuyCount { get; set; }
-
 	}
-	public class CGShopListReqPacket : PacketRequestBase
+
+	public class CGShopListReqPacket : PackettBase
 	{
-		public CGShopListReqPacket() : base(PacketId.CG_ShopList_Req_Packet_Id)
-		{
-
-		}
 	}
+
 	public class GCShopListAnsPacket : PacketAnsPacket
 	{
 		public GCShopListAnsPacket()
 		{
-			ErrorCode = Share.Common.ErrorCode.SUCCESS;
+			ErrorCode = ErrorCode.SUCCESS;
 		}
 		public List<ShopData> ShopDatas { get; set; }
+	}
+
+	public class CGShopBuyReqPacket : PackettBase
+	{
+		public int ShopItemId { get; set; }
+	}
+
+	public class GCShopBuyAnsPacket : PacketAnsPacket
+	{
+		public GCShopBuyAnsPacket()
+		{
+			ErrorCode = ErrorCode.SUCCESS;
+		}
 	}
 }
