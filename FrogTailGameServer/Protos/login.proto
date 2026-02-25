@@ -17,18 +17,28 @@ message VerityLoginRequest {
   string access_token = 3;
 }
 
+message AccountLinkRequest {
+  OsType os_type = 1;
+  LoginType login_type = 2;
+  string access_token = 3;
+}
+
 message LoginResponse {
   ErrorCode error_code = 1;
   string user_token = 2;
   int64 user_id = 3;
-  string guest_token = 4;
 }
 
 message VerityLoginResponse {
   ErrorCode error_code = 1;
 }
 
+message AccountLinkResponse {
+  ErrorCode error_code = 1;
+}
+
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc VerityLogin (VerityLoginRequest) returns (VerityLoginResponse);
+  rpc AccountLink (AccountLinkRequest) returns (AccountLinkResponse);
 }

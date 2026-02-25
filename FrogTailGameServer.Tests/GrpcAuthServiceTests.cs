@@ -22,8 +22,8 @@ namespace FrogTailGameServer.Tests
     ///   호출 여부 및 인자 검증.
     ///
     /// 케이스 목록:
-    ///   [정상] Guest_NewLogin_EmptyToken_ReturnsSuccessAndGuestToken
-    ///   [정상] Guest_ReLogin_WithGuestToken_ReturnsSameUserId
+    ///   [정상] Guest_NewLogin_EmptyToken_ReturnsSuccess
+    ///   [정상] Guest_ReLogin_WithAccessToken_ReturnsSameUserId
     ///   [정상] Google_ValidToken_ReturnsSuccess  (Firebase 호출 skip — 별도 통합 테스트 대상)
     ///   [예외] Guest_EmptyNickName_ReturnsInvalidNickName
     ///   [예외] UnsupportedOsType_ReturnsInvalidPacketInfo
@@ -307,58 +307,6 @@ namespace FrogTailGameServer.Tests
             Assert.Equal(DataBaseManager.DBtype.Account, callSequence[0]);
         }
 
-        [Fact]
-        public async Task Login_Guest_NewLogin_GuestToken_IsNotEmpty_InResponse()
-        {
-            // Arrange
-            // DB 트랜잭션 mock: isCreate = true 경로를 타도록 콜백 직접 실행
-            // Account 트랜잭션: GetAccountLinkInfo → null(신규), Insert 성공
-            // Game 트랜잭션: InsertUserInfo → userId 반환
-            // 실제 Dapper 쿼리를 실행하지 않으므로 isCreate는 false로 남음.
-            // 이 테스트는 GuestToken 응답 포함 여부(isCreate 경로)를
-            // 서비스 레이어 관점에서 검증한다.
-            //
-            // 결론: DBContextExcuteTransaction이 mock이므로 isCreate = false 상태.
-            // 이 케이스는 "신규 경로가 DB Insert를 올바르게 시도한다"는
-            // GuestToken 생성 여부만 검증한다.
-            var sut     = CreateSut();
-            var request = new global::FrogTailGameServer.Grpc.LoginRequest
-            {
-                DeviceId    = "device-guest-new",
-                NickName    = "GuestNew",
-                OsType      = global::FrogTailGameServer.Grpc.OsType.Windows,
-                LoginType   = global::FrogTailGameServer.Grpc.LoginType.Guest,
-                AccessToken = ""
-            };
-
-            // Account 트랜잭션 mock: func 실행하지 않고 accountId를 0으로 둠
-            // (실제 DB 없이 토큰 생성 로직만 확인)
-            _dbManagerMock
-                .Setup(m => m.DBContextExcuteTransaction(
-                    DataBaseManager.DBtype.Account,
-                    It.IsAny<Func<DbConnection, Task<bool>>>()))
-                .Callback<DataBaseManager.DBtype, Func<DbConnection, Task<bool>>>((_, func) =>
-                {
-                    // accessToken이 채워졌는지 확인하기 위해
-                    // 서비스 내부 변수는 직접 접근 불가하므로
-                    // 이 callback 시점에 accessToken이 비어있지 않아야 한다.
-                    // (Guest 신규라면 이 시점에 이미 RandToken.GenerateUniqueToken()이 호출됨)
-                })
-                .Returns(Task.CompletedTask);
-
-            // Act
-            var response = await sut.Login(request, TestServerCallContext.Create());
-
-            // Assert — 서비스는 accountId = 0이면 UnknowError를 반환
-            // (DB mock이 콜백을 실행하지 않으므로 accountId가 0으로 남음)
-            // 이 케이스에서 중요한 검증: DB 트랜잭션이 호출되기 전에 토큰이 생성됨
-            _dbManagerMock.Verify(
-                m => m.DBContextExcuteTransaction(
-                    DataBaseManager.DBtype.Account,
-                    It.IsAny<Func<DbConnection, Task<bool>>>()),
-                Times.Once,
-                "Guest 신규 로그인 시 Account DB 트랜잭션이 1회 호출되어야 한다");
-        }
 
         [Fact]
         public async Task Login_Guest_ReLogin_ExistingToken_AccountDbTransaction_Called()

@@ -23,9 +23,9 @@ class Program
 
     /// <summary>
     /// 통합 로그인 시나리오:
-    ///   1. Guest 신규 로그인 (AccessToken = "") → GuestToken 발급 확인
+    ///   1. Guest 신규 로그인 (AccessToken = "")
     ///   2. ShopList 조회 (신규 로그인 세션으로 인증 확인)
-    ///   3. Guest 재로그인 (AccessToken = GuestToken) → 동일 UserId 확인
+    ///   3. Guest 재로그인 (AccessToken = "") → 새 세션 생성 확인
     ///   4. ShopList 조회 (재로그인 세션으로 인증 확인)
     /// </summary>
     private static async Task RunLoginScenariosAsync(GrpcChannel channel)
@@ -36,9 +36,7 @@ class Program
         // 시나리오 1: Guest 신규 로그인
         // ------------------------------------------------------------------
         Console.WriteLine("\n[TestClient] === [1/4] Guest 신규 로그인 ===");
-        Console.WriteLine("[TestClient] AccessToken = \"\" (빈 값) → 서버에서 GuestToken 발급 기대");
 
-        string guestToken  = string.Empty;
         long   firstUserId = 0;
         string userToken1  = string.Empty;
 
@@ -56,7 +54,6 @@ class Program
             Console.WriteLine($"[1/4] ErrorCode:  {response.ErrorCode}");
             Console.WriteLine($"[1/4] UserId:     {response.UserId}");
             Console.WriteLine($"[1/4] UserToken:  {response.UserToken}");
-            Console.WriteLine($"[1/4] GuestToken: {response.GuestToken}");
 
             if (response.ErrorCode != ErrorCode.Success)
             {
@@ -64,8 +61,7 @@ class Program
                 return;
             }
 
-            Console.WriteLine($"[1/4] PASS - GuestToken 발급: {!string.IsNullOrEmpty(response.GuestToken)}, UserId > 0: {response.UserId > 0}");
-            guestToken  = response.GuestToken;
+            Console.WriteLine($"[1/4] PASS - UserId > 0: {response.UserId > 0}");
             firstUserId = response.UserId;
             userToken1  = response.UserToken;
         }
@@ -85,7 +81,6 @@ class Program
         // 시나리오 3: Guest 재로그인
         // ------------------------------------------------------------------
         Console.WriteLine("\n[TestClient] === [3/4] Guest 재로그인 ===");
-        Console.WriteLine($"[TestClient] AccessToken = \"{guestToken}\" → 동일 UserId 기대");
 
         string userToken2 = string.Empty;
 
@@ -97,12 +92,11 @@ class Program
                 NickName    = "GuestUser",
                 OsType      = OsType.Windows,
                 LoginType   = LoginType.Guest,
-                AccessToken = guestToken
+                AccessToken = string.Empty
             });
 
             Console.WriteLine($"[3/4] ErrorCode:  {response.ErrorCode}");
             Console.WriteLine($"[3/4] UserId:     {response.UserId}");
-            Console.WriteLine($"[3/4] GuestToken: {response.GuestToken} (재로그인은 빈 값이어야 함)");
 
             if (response.ErrorCode != ErrorCode.Success)
             {
@@ -110,9 +104,7 @@ class Program
                 return;
             }
 
-            bool sameUserId   = response.UserId == firstUserId;
-            bool noGuestToken = string.IsNullOrEmpty(response.GuestToken);
-            Console.WriteLine($"[3/4] PASS - 동일 UserId: {sameUserId} ({firstUserId}=={response.UserId}), GuestToken 미발급: {noGuestToken}");
+            Console.WriteLine($"[3/4] PASS - UserId > 0: {response.UserId > 0}");
             userToken2 = response.UserToken;
         }
         catch (RpcException ex)

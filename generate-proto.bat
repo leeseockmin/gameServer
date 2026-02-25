@@ -1,5 +1,5 @@
 @echo off
-echo === Proto 파일 자동 생성 ===
+echo === Proto AuTo Create ===
 cd /d "%~dp0PacketToProtoGenerator"
 dotnet run -c Release -- ^
   "%~dp0Share\Packet" ^

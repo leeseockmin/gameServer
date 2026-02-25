@@ -50,4 +50,6 @@ namespace Share.Packet
 			ErrorCode = Share.Common.ErrorCode.SUCCESS;
 		}
 	}
+
+	
 }

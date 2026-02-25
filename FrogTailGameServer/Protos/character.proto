@@ -1,0 +1,16 @@
+syntax = "proto3";
+import "Protos/common.proto";
+option csharp_namespace = "FrogTailGameServer.Grpc";
+package character;
+
+message CreateCharacterRequest {
+  int32 character_id = 1;
+}
+
+message CreateCharacterResponse {
+  ErrorCode error_code = 1;
+}
+
+service CharacterService {
+  rpc CreateCharacter (CreateCharacterRequest) returns (CreateCharacterResponse);
+}

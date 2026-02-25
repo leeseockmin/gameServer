@@ -16,11 +16,20 @@ message ShopItemData {
 message ShopListRequest {
 }
 
+message ShopBuyRequest {
+  int32 shop_item_id = 1;
+}
+
 message ShopListResponse {
   ErrorCode error_code = 1;
   repeated ShopData shop_datas = 2;
 }
 
+message ShopBuyResponse {
+  ErrorCode error_code = 1;
+}
+
 service ShopService {
   rpc ShopList (ShopListRequest) returns (ShopListResponse);
+  rpc ShopBuy (ShopBuyRequest) returns (ShopBuyResponse);
 }

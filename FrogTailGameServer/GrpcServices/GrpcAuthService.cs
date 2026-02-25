@@ -110,13 +110,12 @@ namespace FrogTailGameServer.GrpcServices
             {
                 case LoginType.Guest:
                 {
-                    // 신규: 빈 토큰 → 서버에서 GuestToken 생성
+                    // 신규: 빈 토큰 → AccessToken 자동 생성
                     if (string.IsNullOrEmpty(accessToken))
                     {
                         accessToken = RandToken.GenerateUniqueToken();
                         _logger.LogInformation("[gRPC Login] Guest new token generated.");
                     }
-                    // 재로그인: 토큰 있음 → 그대로 사용
                     break;
                 }
                 case LoginType.Google:
@@ -301,12 +300,6 @@ namespace FrogTailGameServer.GrpcServices
                 UserToken = userSession.userToken,
                 UserId    = userSession.userId
             };
-
-            // Guest 신규 로그인 시에만 GuestToken 반환 (클라이언트가 보관해야 함)
-            if (loginType == LoginType.Guest && isCreate)
-            {
-                response.GuestToken = accessToken;
-            }
 
             return response;
         }

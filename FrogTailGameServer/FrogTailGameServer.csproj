@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,6 +53,14 @@
     <ProjectReference Include="..\Data\DB.Data.csproj" />
     <ProjectReference Include="..\Share\Share.csproj" />
   </ItemGroup>
+
+  <!-- 빌드 전 Packet C# 클래스 → .proto 자동 생성 -->
+  <Target Name="GenerateProtoFiles" BeforeTargets="BeforeBuild">
+    <Exec
+      Command="dotnet run -c Release --project &quot;$(MSBuildThisFileDirectory)..\PacketToProtoGenerator\PacketToProtoGenerator.csproj&quot; -- &quot;$(MSBuildThisFileDirectory)..\Share\Packet&quot; &quot;$(MSBuildThisFileDirectory)Protos&quot;"
+      ConsoleToMSBuild="true" />
+    <Message Text="[Proto] 생성 완료" Importance="high" />
+  </Target>
 
   <ItemGroup>
     <!-- Protos 폴더의 .proto 파일을 전부 자동 포함 (새 파일 추가 시 별도 등록 불필요) -->

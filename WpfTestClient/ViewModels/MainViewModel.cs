@@ -26,8 +26,7 @@ public sealed partial class MainViewModel : ObservableObject
     private LoginType _loginType = LoginType.Guest;
 
     /// <summary>
-    /// Guest 신규: 비워두면 서버에서 GuestToken 발급 후 여기에 자동 채움.
-    /// Guest 재로그인: 자동 채워진 GuestToken 값.
+    /// Guest: 빈 값이면 서버에서 AccessToken 자동 생성.
     /// Firebase: JWT AccessToken.
     /// </summary>
     [ObservableProperty]
@@ -107,18 +106,11 @@ public sealed partial class MainViewModel : ObservableObject
             AppendResponse($"  ErrorCode:  {response.ErrorCode}");
             AppendResponse($"  UserId:     {response.UserId}");
             AppendResponse($"  UserToken:  {response.UserToken}");
-            AppendResponse($"  GuestToken: {response.GuestToken}");
 
             if (response.ErrorCode == ErrorCode.Success)
             {
                 _grpcService.SetSession(response.UserId, response.UserToken);
                 SessionInfo = $"LoginType={LoginType} | UserId={response.UserId} | Token={Truncate(response.UserToken, 12)}...";
-
-                if (!string.IsNullOrEmpty(response.GuestToken))
-                {
-                    AccessToken = response.GuestToken;
-                    AppendResponse("  [안내] GuestToken이 AccessToken 필드에 자동으로 채워졌습니다. 재로그인 시 그대로 사용하세요.");
-                }
             }
             else
             {
@@ -262,8 +254,6 @@ public sealed partial class MainViewModel : ObservableObject
                 {
                     _grpcService.SetSession(response.UserId, response.UserToken);
                     SessionInfo = $"LoginType={LoginType} | UserId={response.UserId} | Token={Truncate(response.UserToken, 12)}...";
-                    if (!string.IsNullOrEmpty(response.GuestToken))
-                        AccessToken = response.GuestToken;
                 }
                 break;
             }
