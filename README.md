@@ -1,6 +1,6 @@
 # FrogTailGameServer
 
-.NET 8 기반 gRPC 게임 서버입니다. Firebase 인증, MySQL 이중 DB(Account/Game), Redis 세션 관리를 핵심으로 하며, Claude Code 에이전트 팀(CTO - 시니어 - 개발자 - DBA - QA) 워크플로우로 개발됩니다.
+.NET 8 기반 gRPC 서버입니다. Firebase 인증, MySQL 이중 DB(Account/Game), Redis 세션 관리를 핵심으로 하며, Claude Code 에이전트 팀(CTO - 시니어 - 개발자 - DBA - QA) 워크플로우로 개발됩니다.
 
 ---
 
