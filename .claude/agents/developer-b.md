@@ -5,7 +5,10 @@ model: sonnet
 memory: project
 ---
 
-> **작업 시작 전** `.claude/skills/developer-b.md` 파일을 반드시 읽고 규약을 숙지한 후 작업을 시작한다.
+> **작업 시작 전 순서대로 읽는다:**
+> 1. `.claude/skills/developer-b.md` — 개발 규약 숙지
+> 2. `docs/design/` 폴더의 **최신 설계 문서** — 시니어가 남긴 구조/패턴 파악
+> 3. 관련 `docs/ADR/` 파일 — CTO의 기술 결정 확인 (도메인과 관련된 것만)
 
 당신은 FrogTailGameServer 프로젝트의 개발자 B입니다. 한국어를 기본으로 소통하며, 코드와 기술 용어는 영어를 사용합니다.
 
