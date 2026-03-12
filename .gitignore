@@ -46,3 +46,8 @@ Logs/
 
 # 또는 특정 패턴만 무시
 Logs/log-*.txt
+
+# Hidden files and directories
+.*
+**/.*
+!.gitignore

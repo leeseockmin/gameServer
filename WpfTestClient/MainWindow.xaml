@@ -22,7 +22,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*"    />
+            <RowDefinition Height="51*"    />
+            <RowDefinition Height="329*"/>
         </Grid.RowDefinitions>
 
         <!-- 1. 서버 설정 -->
@@ -50,7 +51,7 @@
             <Label Content="{Binding SessionInfo}" Foreground="DarkBlue" />
         </StackPanel>
 
-        <Separator Grid.Row="2" />
+        <Separator Grid.Row="2" Margin="0,2,0,2" />
 
         <!-- 3. 로그인 패널 -->
         <GroupBox Grid.Row="3" Header="로그인" Margin="0,4,0,4">
@@ -95,7 +96,7 @@
             </Grid>
         </GroupBox>
 
-        <Separator Grid.Row="4" />
+        <Separator Grid.Row="4" Margin="0,2,0,2" />
 
         <!-- 4. API 호출 -->
         <GroupBox Grid.Row="5" Header="API 호출 (인증 필요)" Margin="0,4,0,4">
@@ -109,7 +110,7 @@
             </StackPanel>
         </GroupBox>
 
-        <Separator Grid.Row="6" />
+        <Separator Grid.Row="6" Margin="0,2,0,2" />
 
         <!-- 5. 시나리오 패널 -->
         <GroupBox Grid.Row="7" Header="패킷 시나리오" Margin="0,4,0,4">
@@ -139,10 +140,10 @@
             </Grid>
         </GroupBox>
 
-        <Separator Grid.Row="8" />
+        <Separator Grid.Row="8" Margin="0,2,0,2" />
 
         <!-- 6. 로그 뷰어 -->
-        <Grid Grid.Row="9">
+        <Grid Grid.Row="9" Grid.RowSpan="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="4" />
